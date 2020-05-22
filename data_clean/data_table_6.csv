@@ -1,0 +1,71 @@
+Author,1. Was the research question or objective in this paper clearly stated?,2. Was the study population clearly specified and defined?,3. Was the participation rate of eligible persons at least 50%?,4. Were all the subjects selected or recruited from the same or similar populations (including the same time period)? Were inclusion and exclusion criteria for being in the study prespecified and applied uniformly to all participants?,"5. Was a sample size justification, power description, or variance and effect estimates provided?","6. For the analyses in this paper, were the exposure(s) of interest measured prior to the outcome(s) being measured?",7. Was the timeframe sufficient so that one could reasonably expect to see an association between exposure and outcome if it existed?,"8. For exposures that can vary in amount or level, did the study examine different levels of the exposure as related to the outcome (e.g., categories of exposure, or exposure measured as continuous variable)?","9. Were the exposure measures (independent variables) clearly defined, valid, reliable, and implemented consistently across all study participants?",10. Was the exposure(s) assessed more than once over time?,"11. Were the outcome measures (dependent variables) clearly defined, valid, reliable, and implemented consistently across all study participants?",12. Were the outcome assessors blinded to the exposure status of participants?,13. Was loss to follow-up after baseline 20% or less?,14. Were key potential confounding variables measured and adjusted statistically for their impact on the relationship between exposure(s) and outcome(s)?,"Overall rating (poor, fair, good)"
+"Guan, Ni",Yes,No,No,Cannot determine,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Guan, Liang",Yes,No,No,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+Lian,Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,No,No,Not applicable,No,Poor
+Jin,Yes,Yes,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Chen,Yes,Yes,Cannot determine,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Zhou, Yu",Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Mo,Yes,Yes,Cannot determine,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Zhang, Dong",Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Wan,Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Liu, Tao",Yes,Yes,Yes,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Huang, Wang",Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Zhang, Cai",Yes,No,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Guo,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Liu, Ming",Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Huang, Yang",Yes,Yes,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Xu,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Li,Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Rentsch,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+Hu,Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+"Wang, Pan",Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Chow (US CDC),Yes,Yes,No,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,No,No,Not applicable,No,Poor
+Petrilli,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+Miyara,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Fair
+"Dong, Cao",No,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Kim,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Shi, Yu",Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Yang, Yu",Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Argenziano,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Fair
+Solís,Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Richardson,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Fontanet,Yes,Yes,Yes,Yes,No,No,Cannot determine,No,No,No,Yes,No,Not applicable,No,Poor
+"Zheng, Gao",Yes,Yes,Yes,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Liao, Feng",Yes,Yes,Yes,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Rodríguez,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Yes,No,Poor
+Magagnoli,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Shi, Ren",Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Hadjadj,Yes,No,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Niedzwiedz,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+ISARIC_1,No,No,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Gold (US CDC),Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Mehra,Yes,No,Cannot determine,Cannot determine,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+ISARIC_3,No,No,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Yu, Cai",Yes,Yes,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Zheng, Xiong",Yes,No,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,Yes,Poor
+Miyara_updated,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Fair
+de la Rica,Yes,Yes,Yes,Yes,No,Yes,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+"Yin, Yang",Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Gaibazzi,Yes,Yes,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+"Shi, Zuo",Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Cho,Yes,Yes,Cannot determine,Yes,No,Yes,Cannot determine,Yes,Yes,Cannot determine,Yes,No,Not applicable,Yes,Fair
+Allenbach,Yes,Yes,Cannot determine,Yes,No,No,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Robilotti,Yes,No,Yes,Cannot determine,No,Cannot determine,Cannot determine,Yes,Yes,Cannot determine,Yes,No,Not applicable,No,Poor
+OpenSAFELY Collaborative,Yes,No,Yes,Cannot determine,No,Cannot determine,Cannot determine,Yes,No,Cannot determine,Yes,Yes,Not applicable,Yes,Fair
+Borobia,Yes,Yes,Yes,Cannot determine,No,No,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Giacomelli,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Shah,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,Yes,Yes,Cannot determine,Yes,Yes,Not applicable,No,Fair
+Bello-Chavolla,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Kolin,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,Yes,Yes,Cannot determine,Yes,No,Not applicable,No,Fair
+Lubetzky,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Goyal,Yes,Yes,Yes,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Feng,Yes,Yes,Yes,Cannot determine,No,Cannot determine,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Yao,Yes,Yes,Yes,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Sami,Yes,Yes,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+Almazeedi,Yes,Yes,Yes,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,Yes,Poor
+Carillo-Vega,Yes,Yes,Yes,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,Yes,Poor
+Yanover,Yes,Yes,Yes,Yes,No,Cannot determine,Cannot determine,Yes,No,Cannot determine,Yes,No,Not applicable,Yes,Fair
+Hamer,Yes,No,Cannot determine,Yes,No,Cannot determine,Cannot determine,Yes,No,Cannot determine,No,No,Not applicable,No,Poor
+Regina,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,Yes,Poor
+ISARIC_4,No,No,Cannot determine,Cannot determine,No,Cannot determine,Cannot determine,No,No,Cannot determine,Yes,No,Not applicable,No,Poor
+de Lusignan,Yes,Yes,Cannot determine,Yes,No,Cannot determine,Cannot determine,Yes,Yes,Cannot determine,Yes,No,Not applicable,Yes,Fair
