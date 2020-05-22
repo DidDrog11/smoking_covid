@@ -70,10 +70,9 @@ c$country <- c$country %>%
 ggplot(c, aes(x = smoking, y = prevalence, fill = study))+
   geom_dotplot(binaxis = 'y', method = 'histodot', stackdir = 'center', binpositions = 'all', dotsize = 1, stackgroups = T)+
   facet_wrap(~reorder(country, -n), nrow = 2)+
-  labs(title = 'Smoking prevalence in included studies and national populations', y = 'Prevalence', fill = '')+
+  labs(title = 'Smoking prevalence in included studies compared with national prevalence', y = 'Prevalence', fill = '')+
   scale_fill_discrete(labels = c('National prevalence', 'Study population prevalence'))+
   scale_x_discrete(name = 'Smoking status', labels = c('Current', 'Former'))+
-  scale_size_area(sample)+
   theme_bw()+
   theme(legend.position = 'bottom')
 

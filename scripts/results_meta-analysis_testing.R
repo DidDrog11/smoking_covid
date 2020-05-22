@@ -1,12 +1,42 @@
-library(fmsb)
 library(epitools)
 library(meta)
 library(tidyverse)
+source('scripts/rr_function.R')
+
+table_2 <- read_rds('data_clean/table_2_word.rds')
+included_studies <- c('cho', 'de_lusignan', 'rentsch', 'kolin', 'shah')
+
+#And Nidzweidz
 
 #################RR from raw data#####################
 
-#Niedzwiedz is included here
+meta <- tibble('author' = table_2$lead_author,
+               'negative_smoker' = table_2$negative_current_smoker,
+               'negative_never_smoker' = table_2$negative_never_smoker,
+               'positive_smoker' = table_2$positive_current_smoker,
+               'positive_never_smoker' = table_2$positive_never_smoker,
+               'negative_former_smoker' = table_2$negative_former_smoker,
+               'positive_former_smoker' = table_2$positive_former_smoker) %>%
+        filter(author %in% included_studies)
 
+meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
+                      'cho' = 'Cho',
+                      'shah' = 'Shah',
+                      'kolin' = 'Kolin',
+                      'de_lusignan' = 'de Lusignan')
+
+a <- RR_testing('Rentsch', 'current')
+b <- RR_testing('Rentsch', 'former')
+c <- RR_testing('Cho', 'current')
+d <- RR_testing('Cho', 'former')
+e <- RR_testing('Shah', 'current')
+f <- RR_testing('Shah', 'former')
+g <- RR_testing('Kolin', 'current')
+h <- RR_testing('Kolin', 'former')
+i <- RR_testing('de Lusignan', 'current')
+j <- RR_testing('de Lusignan', 'former')
+data <- list(a,b,c,d,e,f,g,h,i,j)
+k <- do.call(rbind.data.frame, data)
 # Rentsch -----------------------------------------------------------------
 #current vs. never smokers
 

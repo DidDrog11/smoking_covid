@@ -1,4 +1,3 @@
-library(fmsb)
 library(epitools)
 library(meta)
 library(tidyverse)
