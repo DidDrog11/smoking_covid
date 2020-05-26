@@ -1,0 +1,958 @@
+---
+title: "Smoking and COVID Living Review"
+author: "David Simons, Lion Shahab, Jamie Brown and Olga Perski"
+date: "`r format(Sys.time(), '%A %d %B %Y')`"
+output: 
+  
+  html_document:
+    code_folding: hide
+    highlight: zenburn
+    number_sections: true
+    theme: spacelab
+    toc: true
+    toc_collaps: true
+    toc_depth: 3
+    toc_float: yes
+    css: !expr here::here('css', 'style.css')
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = F,
+                      message = F)
+
+
+```
+
+## Data preparation {.tabset .tabset-fade .tabset-pills}
+
+### Load packages
+
+* **Load packages**: load packages and useful scripts for the analysis
+
+```{r libraries}
+
+library('tidyverse', quietly = T)
+library('ggplot2', quietly = T)
+library('dplyr', quietly = T)
+library('readxl', quietly = T)
+library('linelist', quietly = T)
+library('googlesheets4', quietly = T)
+library('naniar', quietly = T)
+library('gridExtra', quietly = T)
+library('snakecase', quietly = T)
+library('epitools', quietly = T)
+library('meta', quietly = T)
+library('knitr', quietly = T)
+library('kableExtra', quietly = T)
+library('snakecase', quietly = T)
+
+```
+
+### Download from Google sheets
+
+* **Load data**: import raw dataset directly from Google sheets
+
+```{r raw_data, cache=T}
+
+sheets_id <- as_sheets_id('https://docs.google.com/spreadsheets/d/15avypGR8ypJngWQEmFIzFrOOwXPY3xezUHQU6jgV7d0/edit?usp=sharing')
+search_details <- read_sheet(sheets_id, range = 'article_screening')
+data_study_general <- read_sheet(sheets_id, range =  'general_details')
+table_1 <- read_sheet(sheets_id, sheet = 'pop_descriptives')
+table_2 <-  read_sheet(sheets_id, sheet = 'testing')
+table_3 <-  read_sheet(sheets_id, sheet = 'hospitalisation')
+table_4 <-  read_sheet(sheets_id, sheet = 'severity')
+table_5 <-  read_sheet(sheets_id, sheet = 'mortality')
+table_6 <-  read_sheet(sheets_id, sheet = 'quality_appraisal')
+
+```
+
+### Clean data and save updated versions as RDS files
+
+```{r clean_data}
+
+search_details <- search_details %>%
+  clean_data() %>%
+  rename('date_screened' = 1) %>%
+  write_rds(here::here('data_clean', 'search_details.rds'))
+
+
+protect_columns_1 <- names(data_study_general) %in% 'doi'
+
+data_study_general <- data_study_general %>%
+  rename('notes' = 11, date_published = `date_published_format(2020-05-12)`) %>%
+  clean_data(protect = protect_columns_1) %>%
+  write_rds(here::here('data_clean', 'data_study_general.rds'))
+
+review_details <- data_study_general %>%
+  select(lead_author, date_published, country, review_version) %>%
+  write_rds(here::here('data_clean', 'review_details.rds'))
+
+table_1 <- table_1 %>%
+  clean_data() %>%
+  mutate(., lower_range = sub('\\_.*', '', .$range)) %>%
+  mutate(., upper_range = sub('.*_', '',.$range,)) %>%
+  select(1:9, 22:23, 11:21) %>%
+  filter(!is.na(lead_author)) %>%
+  left_join(., review_details, by = 'lead_author') %>%
+  write_rds(here::here('data_clean', 'table_1.rds'))
+
+table_2 <-  table_2 %>%
+  clean_data() %>%
+  filter(data_on_testing == TRUE) %>%
+  left_join(., review_details, by = 'lead_author') %>%
+  write_rds(here::here('data_clean', 'table_2.rds'))
+
+table_3 <-  table_3 %>%
+  clean_data() %>%
+  filter(data_on_hospitalisation == TRUE) %>%
+  left_join(., review_details, by = 'lead_author') %>%
+  write_rds(here::here('data_clean', 'table_3.rds'))
+
+table_4 <-  table_4 %>%
+  clean_data() %>%
+  filter(data_disease_severity == TRUE) %>%
+  left_join(., review_details, by = 'lead_author') %>%
+  write_rds(here::here('data_clean', 'table_4.rds'))
+
+table_5 <- table_5 %>%
+  clean_data() %>%
+  filter(data_on_deaths == TRUE) %>%
+  left_join(., review_details, by = 'lead_author') %>%
+  write_rds(here::here('data_clean', 'table_5.rds'))
+
+
+table_6 <-  table_6 %>%
+  write_rds(here::here('data_clean', 'table_6.rds')) 
+
+kable(data_study_general[,1:4], caption = paste('The studies which have been entered into the Google sheet up until', Sys.Date(), 'are'), "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+
+```
+
+All data has now been stored in `.rds` format in the `/data_clean` folder. This can be analysed outside of the report using pre-generated scripts or user created scripts. 
+
+## Preparing the descriptive analysis {.tabset .tabset-fade .tabset-pills}
+
+### Choosing which data we want to include in the current review? 
+
+``` {r versioning}
+
+date_of_update <- Sys.Date()
+
+prev_versions <- c('v1', 'v2')
+#This can categorise which studies we want to look at
+current_version <- c('v3')
+#This will categorise which studies we are including in the current report
+
+analysed_versions <- c('v1', 'v2', 'v3')
+#This will incorporate all studies into the current version of the report
+
+exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old')
+
+exclude_from_qa <- c('ISARIC_1', 'ISARIC_2', 'ISARIC_3', 'Miyara')
+
+```
+We are currently on **Version `r paste(current_version)`**.
+We have excluded from the analysis the following studies: `r knitr::combine_words(exclude_from_analysis)`
+
+### Filter the included studies
+
+``` {r descriptives}
+
+data_study_general <- data_study_general %>%
+  filter(review_version %in% analysed_versions) %>%
+  filter(!lead_author %in% exclude_from_analysis) 
+
+table_1 <- table_1 %>%
+  filter(review_version %in% analysed_versions) %>%
+  select(-review_version) %>%
+  filter(!lead_author %in% exclude_from_analysis)
+
+table_2 <- table_2 %>%
+  filter(review_version %in% analysed_versions) %>%
+  select(-review_version) %>%
+  filter(!lead_author %in% exclude_from_analysis)
+
+table_3 <- table_3 %>%
+  filter(review_version %in% analysed_versions) %>%
+  select(-review_version) %>%
+  filter(!lead_author %in% exclude_from_analysis)
+
+table_4 <- table_4 %>%
+  filter(review_version %in% analysed_versions) %>%
+  select(-review_version) %>%
+  filter(!lead_author %in% exclude_from_analysis)
+
+table_5 <- table_5 %>%
+  filter(review_version %in% analysed_versions) %>%
+  select(-review_version) %>%
+  filter(!lead_author %in% exclude_from_analysis)
+
+table_6 <- table_6 %>%
+  filter(!Author %in% exclude_from_qa)
+
+kable(data_study_general[,c(1:4,6)], caption = 'The studies which are included in this report are', "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+```  
+
+## Descriptive analysis {.tabset .tabset-fade .tabset-pills}
+
+### The PRISMA diagram will be updated with these numbers
+
+``` {r PRISMA}
+#Number screened to add to PRISMA
+from_prev_version <- data_study_general %>%
+  filter(review_version %in% prev_versions) %>%
+  filter(!lead_author %in% exclude_from_analysis) %>%
+  tally()
+
+source(here::here('scripts', 'prisma_function.R'))
+
+PRISMA_v3 <- PRISMA(search_details)
+PRISMA_v3
+
+```
+
+### We summarise where the studies were conducted
+
+``` {r countries}
+#Countries
+country <- table_1$country %>%
+  to_upper_camel_case() %>%
+  recode(., 'Usa' = 'USA', 'Uk' = 'UK')
+
+
+ggplot(as_data_frame(country), aes(x = country))+
+  geom_bar()+
+  theme_bw()+
+  labs(title = 'Countries where studies were performed',
+       y = 'Count of studies')
+
+```
+
+### We sumarise the settings in which they were conducted
+
+``` {r setting}
+
+#Setting
+setting <- to_upper_camel_case(data_study_general$study_setting, sep_out = ' ') %>%
+  table(.) %>%
+  sort('Number of studies', decreasing = T)
+
+kable(setting,
+      col.names = c('Setting', 'Number of studies'),
+      format = 'html', caption = 'The settings in which studies were conducted include')
+
+
+```
+
+### We update the number of participants we have included
+
+* **Summary statistics:** This table will give us the mean, median and IQR of the samples in the review 
+
+``` {r numbers}
+
+#Numbers
+summary(table_1$sample_size)
+```
+
+* **The total number of participants**
+
+``` {r sample}
+
+#Number of participants
+sum(table_1$sample_size)
+
+```
+
+### We want to know if they use a CRF or electronic health record
+
+``` {r data_source}
+
+#Source of data
+table(table_1$data_source)
+
+```
+
+### Now about the smoking
+
+
+* **Smokers**
+``` {r smokers}
+#Studies reporting smokers
+current_smok <- table_1 %>%
+  filter(., current_smoker != 'NA')
+nrow(current_smok)
+
+```
+* **Former smokers**
+``` {r former smokers}
+#Studies reporting former smokers
+former_smok <- table_1 %>%
+  filter(., former_smoker != 'NA')
+nrow(former_smok)
+```
+* **Never smokers**
+```{r never smokers}
+#Studies reporting never smokers
+never_smok <- table_1 %>%
+  filter(., never_smoker != 'NA')
+nrow(never_smok)
+```
+* **Current/former smokers**
+``` {r current former smokers}
+#Studies reporting current/former smokers
+current_former_smok <- table_1 %>%
+  filter(., current_former_smoker != 'NA')
+nrow(current_former_smok)
+```
+* **Missing, never/unknown and not stated**
+``` {r missing/never/unknown/not stated}
+#Studies reporting missing data
+missing_smok <- table_1 %>%
+  filter(., missing != 'NA')
+nrow(missing_smok)
+
+#Studies reporting never/unknown
+never_smok_unknown <- table_1 %>%
+  filter(., never_smoker_unknown != 'NA')
+nrow(never_smok_unknown)
+
+#Studies with not stated
+smok_not_stated <- table_1 %>%
+  filter(., not_stated != 'NA')
+nrow(smok_not_stated)
+```
+* **Studies with complete smoking status**
+``` {r complete}
+#Studies reporting current, former and never smoking status
+full_smoking_status <- table_1 %>%
+  filter(lead_author %in% current_smok$lead_author) %>%
+  filter(lead_author %in% former_smok$lead_author) %>%
+  filter(lead_author %in% never_smok$lead_author)
+
+b <- full_smoking_status %>%
+  select(lead_author, sample_size, current_smoker, former_smoker, never_smoker)
+kable(b,
+      col.names = c('Lead author', 'Sample size', 'Current smokers (n)', 'Former smokers (n)', 'Never smokers (n)'),
+      format = 'html', caption = 'Studies with documented, current, former and never smokers')
+#These are the studies with data on current, former and never smokers
+```
+
+``` {r incomplete}
+#Studies reporting current or current/former and never smoking
+semi_full_smoking_status <- table_1 %>%
+  filter(lead_author %in% current_former_smok$lead_author) %>%
+  filter(lead_author %in% never_smok$lead_author) %>%
+  filter(!lead_author %in% full_smoking_status$lead_author)
+
+#Remaining studies
+incomplete_smoking_status <- table_1 %>%
+  filter(!lead_author %in% full_smoking_status$lead_author) %>%
+  filter(!lead_author %in% semi_full_smoking_status$lead_author)
+
+```
+
+## Smoking prevalence by country {.tabset .tabset-fade .tabset-pills}
+``` {r smoking_country}
+
+#Smoking prevalence by country
+country_prevalence_list <- table_1 %>%
+  group_by(country) %>%
+  mutate(., current_smok_percentage = current_smoker/total*100) %>%
+  mutate(., former_smok_percentage = former_smoker/total*100) %>%
+  mutate(., missing_percentage = missing/total*100) %>%
+  mutate(., not_stated_percentage = not_stated/total*100) %>%
+  mutate(never_smoker_percentage = never_smoker/total*100) %>%
+  group_split(country)
+
+```
+We have split the data into a list where each country can be analysed separately if required
+
+### Graph for smoking prevalence in the countries included
+``` {r figure_2}
+
+smoking_status <- c('current_smoker', 'former_smoker', 'current_former_smoker', 'never_smoker', 'never_smoker_unknown', 'not_stated', 'missing')
+
+prevalence_plot <- table_1 %>%
+  group_by(country) %>%
+  rename('sample' = total) %>%
+  filter(current_smoker != 'NA') %>%
+  replace_na(., list(current_smoker = 0,
+                     former_smoker = 0,
+                     current_former_smoker = 0,
+                     never_smoker = 0,
+                     never_smoker_unknown = 0,
+                     not_stated = 0,
+                     missing = 0)) %>%
+  mutate(ever_smoker = former_smoker + current_smoker + current_former_smoker,
+         not_stated_missing = missing + not_stated + never_smoker_unknown) %>%
+  select(lead_author, country, sample, current_smoker, former_smoker, never_smoker, ever_smoker, not_stated_missing) %>%
+  mutate(total = never_smoker + ever_smoker + not_stated_missing) %>%
+  mutate(p_current_smoker = current_smoker/total,
+         p_ever_smoker = ever_smoker/total,
+         p_former_smoker = former_smoker/total,
+         p_never_smoker = never_smoker/total,
+         p_ever_smoker = ever_smoker/total,
+         p_not_stated_missing = not_stated_missing/total,
+         p_total = p_ever_smoker + p_never_smoker + p_not_stated_missing) %>%
+  mutate(study = 1) %>%
+  add_count(country) 
+
+
+prevalence_plot$country <- as.factor(prevalence_plot$country)
+
+a <- tibble(country = c('china', 'usa', 'uk', 'france', 'mexico', 'spain', 'italy', 'iran', 'israel', 'korea', 'kuwait', 'switzerland'),
+            current_smoking_p = c(0.277, 0.138, 0.144, 0.32, 0.166, 0.276, 0.19, 0.101, 0.22, 0.193, 0.225, 0.25),
+            former_smoking_p = c(0.04, 0.209, 0.258, 0.314, 0, 0, 0.234, 0, 0, 0, 0, 0),
+            study = 0)
+country_list_ordered <- c('China', 'USA', 'UK', 'France', 'Italy', 'Israel', 'Mexico', 'Spain', 'Iran', 'Korea', 'Kuwait', 'Switzerland')
+
+b <- prevalence_plot %>%
+  ungroup() %>%
+  mutate(current_smoking_p = p_current_smoker,
+         former_smoking_p = p_former_smoker) %>%
+  add_row(country = a$country, current_smoking_p = a$current_smoking_p, former_smoking_p = a$former_smoking_p, study = a$study) %>%
+  group_by(country) %>%
+  filter(country != 'multiple') %>%
+  select(country, sample, study, current_smoking_p, former_smoking_p) %>%
+  add_count(country)
+
+b$study <- as.factor(b$study)
+
+c <- b %>%
+  pivot_longer(., c(current_smoking_p, former_smoking_p), names_to = 'smoking', values_to = 'prevalence') %>%
+  filter(prevalence != 0) %>%
+  select(-n) %>%
+  add_count(country)
+
+c$country <- c$country %>%
+  to_upper_camel_case() %>%
+  recode('Usa' = 'USA', 'Uk' = 'UK')
+
+d <- ggplot(c, aes(x = smoking, y = prevalence, fill = study))+
+  geom_dotplot(binaxis = 'y', method = 'histodot', stackdir = 'center', binpositions = 'all', dotsize = 1, stackgroups = T)+
+  facet_wrap(~reorder(country, -n), nrow = 2)+
+  labs(title = 'Smoking prevalence in included studies compared with national prevalence', y = 'Prevalence', fill = '')+
+  scale_fill_discrete(labels = c('National prevalence', 'Study population prevalence'))+
+  scale_x_discrete(name = 'Smoking status', labels = c('Current', 'Former'))+
+  theme_bw()+
+  theme(legend.position = 'bottom')
+
+d
+
+png(here::here('figure', 'fig_2.png'), width=1024, height=546, res=120)
+d
+null <- dev.off()
+
+```
+
+
+## Final results tables and meta-analyses {.tabset .tabset-fade .tabset-pills}
+
+### Table 1: Included studies
+``` {r table_1}
+
+#Updating table 1
+table_1_word <- table_1 %>%
+  mutate(., current_percentage = current_smoker/total*100) %>%
+  mutate(., former_percentage = former_smoker/total*100) %>%
+  mutate(., current_former_percentage = current_former_smoker/total*100) %>%
+  mutate(., never_smoker_percentage = never_smoker/total*100) %>%
+  mutate(., never_smoker_unknown_percentage = never_smoker_unknown/total*100) %>%
+  mutate(., not_stated_percentage = not_stated/total*100) %>%
+  mutate(., missing_percentage = missing/total*100) %>%
+  select(lead_author, date_published, country, sample_size, median_age, iqr_lower, iqr_upper, mean_age, lower_range, upper_range,
+         standard_deviation, female_sex_percent, current_percentage, former_percentage, current_former_percentage,
+         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage)
+
+a <- data_study_general %>%
+  select(lead_author, study_setting)
+
+table_1_word <- left_join(table_1_word, a, by = 'lead_author') %>%
+  select(1:4, 20, 5:19) %>%
+  write_rds(here::here('data_clean', 'table_1_word.rds'))
+
+kable(table_1_word, caption = 'Table 1', "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+```
+
+### Table 2: Smoking and COVID-19 diagnostic testing
+``` {r table_2}
+
+quality_rating <- table_6 %>%
+  select(Author, 16) %>%
+  rename('lead_author' = Author, 'overall_rating' = 2) %>%
+  clean_data()
+
+#Table 2
+table_2_word <-  table_2 %>%
+  mutate(., sample = contributing_sample) %>%
+  mutate(., negative_test_percentage = negative_test/sample*100,
+         negative_current_percentage = negative_current_smoker/negative_test*100,
+         negative_former_smoker_percentage = negative_former_smoker/negative_test*100,
+         negative_current_former_smoker_percentage = negative_current_former_smoker/negative_test*100,
+         negative_never_smoker_percentage = negative_never_smoker/negative_test*100,
+         negative_not_stated_percentage = negative_not_stated/negative_test*100, 
+         positive_test_percentage = positive_test/sample*100, 
+         positive_current_smoker_percentage = positive_current_smoker/positive_test*100,
+         positive_former_smoker_percentage = positive_former_smoker/positive_test*100,
+         positive_current_former_smoker_percentage = positive_current_former_smoker/positive_test*100, 
+         positive_never_smoker_percentage = positive_never_smoker/positive_test*100, 
+         positive_not_stated_percentage = positive_not_stated/positive_test*100) %>%
+  select(-data_on_testing, -missing, -date_published, -sample) %>%
+  write_rds(here::here('data_clean', 'table_2_word.rds'))
+
+quality_table_2 <- table_2_word %>%
+  left_join(., quality_rating, by = 'lead_author') %>%
+  select(lead_author, overall_rating, )
+
+kable(table_2_word, caption = 'Table 2', "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+```
+
+#### Smoking and testing meta-analysis
+``` {r testing_meta}
+source(here::here('scripts', 'rr_function.R'))
+
+table_2 <- table_2_word
+
+included_studies <- c('cho', 'de_lusignan', 'rentsch', 'kolin', 'shah')
+
+meta <- tibble('author' = table_2$lead_author,
+               'negative_smoker' = table_2$negative_current_smoker,
+               'negative_never_smoker' = table_2$negative_never_smoker,
+               'positive_smoker' = table_2$positive_current_smoker,
+               'positive_never_smoker' = table_2$positive_never_smoker,
+               'negative_former_smoker' = table_2$negative_former_smoker,
+               'positive_former_smoker' = table_2$positive_former_smoker) %>%
+        filter(author %in% included_studies)
+
+meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
+                      'cho' = 'Cho',
+                      'shah' = 'Shah',
+                      'kolin' = 'Kolin',
+                      'de_lusignan' = 'de Lusignan')
+
+a <- RR_testing('Rentsch', 'current')
+b <- RR_testing('Rentsch', 'former')
+c <- RR_testing('Cho', 'current')
+d <- RR_testing('Cho', 'former')
+e <- RR_testing('Shah', 'current')
+f <- RR_testing('Shah', 'former')
+g <- RR_testing('Kolin', 'current')
+h <- RR_testing('Kolin', 'former')
+i <- RR_testing('de Lusignan', 'current')
+j <- RR_testing('de Lusignan', 'former')
+data <- list(a,b,c,d,e,f,g,h,i,j)
+k <- do.call(rbind.data.frame, data)
+
+#SEs for Niedzwiedz et al. 2020
+
+#current vs. never
+
+niedz_log_RR_1<-log(1.15)
+niedz_log_SE_1<-(log(1.54)-log(0.86))/3.92
+
+k <- k %>%
+  add_row(., study = 'Niedzwiedz', smoking_status = 'current', log_RR = niedz_log_RR_1, log_SE = niedz_log_SE_1)
+#former vs. never
+
+niedz_log_RR_2<-log(1.42)
+niedz_log_SE_2<-(log(1.69)-log(1.19))/3.92
+
+k <- k %>%
+  add_row(., study = 'Niedzwiedz', smoking_status = 'former', log_RR = niedz_log_RR_2, log_SE = niedz_log_SE_2)
+
+numbers_in_analysis <- table_2_word %>%
+        left_join(., quality_rating, by = 'lead_author') %>%
+        filter(., overall_rating != 'poor') %>%
+        add_row(lead_author = 'niedzwiedz', contributing_sample = 1474) %>%
+        replace_na(list(negative_not_stated = 0, positive_not_stated = 0)) %>%
+        mutate(contributing_sample = (contributing_sample - (negative_not_stated+positive_not_stated))) %>%
+                       select(lead_author, contributing_sample) %>%
+  na.omit()
+
+included_studies <- c('Rentsch, n = 3528', 'Cho, n = 1331', 'Shah, n = 243', 'Kolin, n = 1462', 'Niedzwiedz, n = 1474', 'de Lusignan, n = 3291')
+```
+The studies included in meta-analysis are `r knitr::combine_words(included_studies)`.
+
+  * **Current versus never smokers**
+```{r current_never}
+#current vs. never smokers
+current_never_meta <- k %>%
+  filter(smoking_status == 'current')
+  
+TE<-current_never_meta$log_RR
+seTE<-current_never_meta$log_SE
+a<-metagen(TE,seTE,sm="RR", studlab = included_studies, comb.fixed = F, comb.random = T)
+
+png(here::here('figure','fig_3.png'), width=1024, height=546, res=120)
+forest(a,
+       sortvar = included_studies,
+       xlim = c(0.3, 2),
+       rightlabs = c('RR', '95% CI', 'Weight'),
+       leftlabs = c('Author', 'logRR', 'SE'),
+       print.tau2 = F,
+       col.diamond = 'blue',
+       col.diamond.lines = 'black',
+       col.square = 'black',
+       col.square.lines = 'black',
+       digits.sd = 2,
+       colgap.forest.left = unit(15,"mm"))
+null <- dev.off()
+```
+
+![Current versus never smokers](figure/fig_3.png)
+
+  * **Former versus never smokers**
+```{r former_never}
+#former vs. never smokers
+
+current_never_meta <- k %>%
+  filter(smoking_status == 'former')
+  
+TE<-current_never_meta$log_RR
+seTE<-current_never_meta$log_SE
+a<-metagen(TE,seTE,sm="RR", studlab = included_studies, comb.fixed = F, comb.random = T)
+
+png(here::here('figure','fig_4.png'), width=1024, height=546, res=120)
+forest(a,
+       sortvar = included_studies,
+       xlim = c(0.3, 2),
+       rightlabs = c('RR', '95% CI', 'Weight'),
+       leftlabs = c('Author', 'logRR', 'SE'),
+       print.tau2 = F,
+       col.diamond = 'blue',
+       col.diamond.lines = 'black',
+       col.square = 'black',
+       col.square.lines = 'black',
+       digits.sd = 2,
+       colgap.forest.left = unit(15,"mm"))
+null <- dev.off()
+
+```
+
+![Former versus never smokers](figure/fig_4.png)
+
+### Table 3: Smoking and COVID-19 hospitalisation
+``` {r table_3}
+
+#Table 3
+table_3_word <- table_3 %>%
+  mutate(., sample = sample_with_outcome) %>%
+  mutate(., community_percentage = number_community/sample*100) %>%
+  mutate(., community_current_smoker_percent = community_current_smoker/number_community*100) %>%
+  mutate(., community_former_smoker_percent = community_former_smoker/number_community*100) %>%
+  mutate(., community_current_former_smoker_percent = community_current_former_smoker/number_community*100) %>%
+  mutate(., community_never_smoker_percent = community_never_smoker/number_community*100) %>%
+  mutate(., community_never_unknown_smoker_percent = community_never_unknown_smoker/number_community*100) %>%
+  mutate(., community_not_stated_percent = community_not_stated/number_community*100) %>%
+  mutate(., number_hospitalised_percent = number_hospitalised/sample*100) %>%
+  mutate(., hospitalised_current_smoker_percent = hospitalised_current_smoker/number_hospitalised*100) %>%
+  mutate(., hospitalised_former_smoker_percent = hospitalised_former_smoker/number_hospitalised*100) %>%
+  mutate(., hospitalised_current_former_smoker_percent = hospitalised_current_former_smoker/number_hospitalised*100) %>%
+  mutate(., hospitalised_never_smoker_percent = hospitalised_never_smoker/number_hospitalised*100) %>%
+  mutate(., hospitalised_never_unknown_smoker_percent = hospitalised_never_unknown_smoker/number_hospitalised*100) %>%
+  mutate(., hospitalised_not_stated_percent = hospitalised_not_stated/number_hospitalised*100) %>%
+  select(1, 20, 6, 21, 7, 22, 8, 23, 9, 24, 10, 25, 11, 26, 12, 27, 13, 28, 14, 29, 15, 30, 16, 31, 17, 32, 18, 33, 19, 34)%>%
+  write_rds(here::here('data_clean', 'table_3_word.rds'))
+
+kable(table_3_word, caption = 'Table 3', "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+
+```
+
+#### Smoking and hospitalisation meta-analysis
+
+```{r current_never hospitalisaiton, echo = F}
+table_3 <- table_3_word
+included_studies <- c('argenziano', 'miyara_updated', 'rentsch', 'yanover', 'hamer')
+```
+The studies included in meta-analysis are `r paste(included_studies, sep = ', ')`.
+
+``` {r}
+# Data --------------------------------------------------------------------
+meta <- tibble('author' = table_3$lead_author,
+               'community_smoker' = table_3$community_current_smoker,
+               'community_never_smoker' = table_3$community_never_smoker, 
+               'hospitalised_smoker' = table_3$hospitalised_current_smoker, 
+               'hospitalised_never_smoker' = table_3$hospitalised_never_smoker,
+               'community_former_smoker' = table_3$community_former_smoker,
+               'hospitalised_former_smoker' = table_3$hospitalised_former_smoker) %>%
+  filter(author %in% included_studies)
+  
+meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
+                      'argenziano' = 'Argenziano',
+                      'miyara_updated' = 'Miyara',
+                      'yanover' = 'Yanover',
+                      'hamer' = 'Hamer')
+
+# Current smoker hospitalisation ------------------------------------------
+event_rates_smoker <- meta %>%
+  mutate(., Ee = hospitalised_smoker) %>%
+  mutate(., Ne = (hospitalised_smoker+community_smoker)) %>%
+  mutate(., Ec = hospitalised_never_smoker) %>%
+  mutate(., Nc = (hospitalised_never_smoker+community_never_smoker)) %>%
+  rename('Author' = author) %>%
+  select(Author, Ee, Ne, Ec, Nc)
+
+event_rates_smoker <- metabin(Ee,
+                              Ne,
+                              Ec,
+                              Nc,
+                              data = event_rates_smoker,
+                              studlab = paste(Author),
+                              comb.fixed = F,
+                              comb.random = T,
+                              method.tau = 'SJ',
+                              hakn = T,
+                              prediction = F,
+                              incr = 0.1,
+                              sm = 'RR')
+png(here::here('figure', 'fig_5.png'), width=1480, height=546, res=120)
+current_smoker_hospitalisation <- forest(event_rates_smoker,
+                                sortvar = Author,
+                                xlim = c(0.5, 3),
+                                rightlabs = c('RR', '95% CI', 'Weight'),
+                                leftlabs = c('Author', 'logRR', 'SE'),
+                                lab.e = 'Current smoker',
+                                lab.c = 'Never smoker',
+                                print.tau2 = F,
+                                col.diamond = 'blue',
+                                col.diamond.lines = 'black',
+                                col.square = 'black',
+                                col.square.lines = 'black',
+                                digits.sd = 2)
+null <- dev.off()
+```
+![Current versus never smokers](figure/fig_5.png)
+
+```{r}
+# Former smoker hospitalisation -------------------------------------------
+event_rates_former <- meta %>%
+  mutate(., Ee = hospitalised_former_smoker) %>%
+  mutate(., Ne = (hospitalised_former_smoker+community_former_smoker)) %>%
+  mutate(., Ec = hospitalised_never_smoker) %>%
+  mutate(., Nc = (hospitalised_never_smoker+community_never_smoker)) %>%
+  rename('Author' = author) %>%
+  select(Author, Ee, Ne, Ec, Nc)
+
+event_rates_former <- metabin(Ee,
+                              Ne,
+                              Ec,
+                              Nc,
+                              data = event_rates_former,
+                              studlab = paste(Author),
+                              comb.fixed = F,
+                              comb.random = T,
+                              method.tau = 'SJ',
+                              hakn = T,
+                              prediction = F,
+                              incr = 0.1,
+                              sm = 'RR')
+png(here::here('figure', 'fig_6.png'), width=1480, height=546, res=120)
+former_smoker_hospitalisation <- forest(event_rates_former,
+                                         sortvar = Author,
+                                         xlim = c(0.5, 5),
+                                         rightlabs = c('RR', '95% CI', 'Weight'),
+                                         leftlabs = c('Author', 'logRR', 'SE'),
+                                         lab.e = 'Former smoker',
+                                         lab.c = 'Never smoker',
+                                         print.tau2 = F,
+                                         col.diamond = 'blue',
+                                         col.diamond.lines = 'black',
+                                         col.square = 'black',
+                                         col.square.lines = 'black',
+                                         digits.sd = 2)
+null <- dev.off()
+
+```
+![Former versus never smokers](figure/fig_6.png)
+
+
+### Table 4: Smoking and COVID-19 disease severity
+
+```{r table_4}
+#Table 4
+table_4_word <- table_4 %>%
+  mutate(., sample = sample_with_severity) %>%
+  mutate(., non_severe_disease_percentage = non_severe_disease/sample*100) %>%
+  mutate(., non_severe_current_smoker_percent = non_severe_current_smoker/non_severe_disease*100) %>%
+  mutate(., non_severe_former_smoker_percent = non_severe_former_smoker/non_severe_disease*100) %>%
+  mutate(., non_severe_current_former_smoker_percent = non_severe_current_former_smoker/non_severe_disease*100) %>%
+  mutate(., non_severe_never_smoker_percent = non_severe_never_smoker/non_severe_disease*100) %>%
+  mutate(., non_severe_never_unknown_smoker_percent = non_severe_never_unknown_smoker/non_severe_disease*100) %>%
+  mutate(., non_severe_not_stated_percent = non_severe_not_stated/non_severe_disease*100) %>%
+  mutate(., severe_disease_number_percent = severe_disease_number/sample*100) %>%
+  mutate(., severe_disease_current_smoker_percent = severe_disease_current_smoker/severe_disease_number*100) %>%
+  mutate(., severe_disease_former_smoker_percent = severe_disease_former_smoker/severe_disease_number*100) %>%
+  mutate(., severe_disease_current_former_smoker_percent = severe_disease_current_former_smoker/severe_disease_number*100) %>%
+  mutate(., severe_disease_never_smoker_percent = severe_disease_never_smoker/severe_disease_number*100) %>%
+  mutate(., severe_disease_never_unknown_percent = severe_disease_never_unknown/severe_disease_number*100) %>%
+  mutate(., severe_disease_not_stated_percent = severe_disease_not_stated/severe_disease_number*100) %>%
+  select(1, 19, 5, 20, 6, 21, 7, 22, 8, 23, 9, 24, 10, 25, 11, 26, 12, 27, 13, 28, 14, 29, 15, 30, 16, 31, 17, 32, 18, 33)%>%
+  write_rds(here::here('data_clean', 'table_4_word.rds'))
+
+kable(table_4_word, caption = 'Table 4', "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+```
+
+#### Smoking and severity meta-analysis
+```{r current_never severity, echo = F}
+table_4 <- table_4_word
+included_studies <- c('guan_ni', 'hadjadj', 'rentsch')
+```
+The studies included in meta-analysis are `r paste(included_studies, sep = ', ')`.
+
+``` {r}
+# Data --------------------------------------------------------------------
+meta <- tibble('author' = table_4$lead_author,
+               'non_severe_smoker' = table_4$non_severe_current_smoker,
+               'non_severe_never_smoker' = table_4$non_severe_never_smoker,
+               'severe_smoker' = table_4$severe_disease_current_smoker,
+               'severe_never_smoker' = table_4$severe_disease_never_smoker,
+               'non_severe_former_smoker' = table_4$non_severe_former_smoker,
+               'severe_former_smoker' = table_4$severe_disease_former_smoker) %>%
+  filter(author %in% included_studies)
+
+meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
+                      'guan_ni' = 'Guan, Ni',
+                      'hadjadj' = 'Hadjadj')
+
+
+# Current smoker severity ------------------------------------------
+event_rates_smoker <- meta %>%
+  mutate(., Ee = severe_smoker) %>%
+  mutate(., Ne = (severe_smoker+non_severe_smoker)) %>%
+  mutate(., Ec = severe_never_smoker) %>%
+  mutate(., Nc = (severe_never_smoker+non_severe_never_smoker)) %>%
+  rename('Author' = author) %>%
+  select(Author, Ee, Ne, Ec, Nc)
+
+event_rates_smoker <- metabin(Ee,
+                              Ne,
+                              Ec,
+                              Nc,
+                              data = event_rates_smoker,
+                              studlab = paste(Author),
+                              comb.fixed = T,
+                              comb.random = F,
+                              method.tau = 'SJ',
+                              hakn = F,
+                              prediction = F,
+                              incr = 0.1,
+                              sm = 'RR')
+png(here::here('figure', 'fig_7.png'), width=1024, height=546, res=120)
+current_smoker_severity <- forest(event_rates_smoker,
+                                         sortvar = Author,
+                                         xlim = c(0.1, 5),
+                                         rightlabs = c('RR', '95% CI', 'Weight'),
+                                         leftlabs = c('Author', 'logRR', 'SE'),
+                                         lab.e = 'Current smoker',
+                                         lab.c = 'Never smoker',
+                                         print.tau2 = F,
+                                         col.diamond = 'blue',
+                                         col.diamond.lines = 'black',
+                                         col.square = 'black',
+                                         col.square.lines = 'black',
+                                         digits.sd = 2)
+null <- dev.off()
+```
+![Current versus never smokers](figure/fig_7.png)
+
+```{r}
+# Former smoker hospitalisation -------------------------------------------
+event_rates_former <- meta %>%
+  mutate(., Ee = severe_former_smoker) %>%
+  mutate(., Ne = (severe_former_smoker+non_severe_former_smoker)) %>%
+  mutate(., Ec = severe_never_smoker) %>%
+  mutate(., Nc = (severe_never_smoker+non_severe_never_smoker)) %>%
+  rename('Author' = author) %>%
+  select(Author, Ee, Ne, Ec, Nc)
+
+event_rates_former <- metabin(Ee,
+                              Ne,
+                              Ec,
+                              Nc,
+                              data = event_rates_former,
+                              studlab = paste(Author),
+                              comb.fixed = F,
+                              comb.random = T,
+                              method.tau = 'SJ',
+                              hakn = F,
+                              prediction = F,
+                              incr = 0.1,
+                              sm = 'RR')
+
+png(here::here('figure', 'fig_8.png'), width=1024, height=546, res=120)
+former_smoker_severity <- forest(event_rates_former,
+                                        sortvar = Author,
+                                        xlim = c(0.2, 10),
+                                        rightlabs = c('RR', '95% CI', 'Weight'),
+                                        leftlabs = c('Author', 'logRR', 'SE'),
+                                        lab.e = 'Former smoker',
+                                        lab.c = 'Never smoker',
+                                        print.tau2 = F,
+                                        col.diamond = 'blue',
+                                        col.diamond.lines = 'black',
+                                        col.square = 'black',
+                                        col.square.lines = 'black',
+                                        digits.sd = 2)
+null <- dev.off()
+
+```
+![Former versus never smokers](figure/fig_8.png)
+
+### Table 5: Smoking and COVID-19 mortality
+
+```{r table_5}
+
+#Table 5
+table_5_word <- table_5 %>%
+  mutate(., sample = sample_with_deaths) %>%
+  mutate(., deaths_percentage = deaths/sample*100) %>%
+  mutate(., death_current_smokers_percent = death_current_smokers/deaths*100) %>%
+  mutate(., death_former_smokers_percent = death_former_smokers/deaths*100) %>%
+  mutate(., death_current_former_smokers_percent = death_current_former_smokers/deaths*100) %>%
+  mutate(., death_never_smokers_percent = death_never_smokers/deaths*100) %>%
+  mutate(., death_never_unknown_smokers_percent = death_never_unknown_smokers/deaths*100) %>%
+  mutate(., death_not_stated_percent = death_not_stated/deaths*100) %>%
+  mutate(., recovered_percentage = recovered/sample*100) %>%
+  mutate(., recovered_current_smoking_percent = recovered_current_smoking/recovered*100) %>%
+  mutate(., recovered_former_smoker_percent = recovered_former_smoker/recovered*100) %>%
+  mutate(., recovered_current_former_smokers_percent = recovered_current_former_smokers/recovered*100) %>%
+  mutate(., recovered_never_smoker_percent = recovered_never_smoker/recovered*100) %>%
+  mutate(., recovered_never_unknown_smoker_percent = recovered_never_unknown_smoker/recovered*100) %>%
+  mutate(., recovered_not_stated_percent = recovered_not_stated/recovered*100) %>%
+  select(1, 20, 6, 21, 7, 22, 8, 23, 9, 24, 10, 25, 11, 26, 12, 27, 13, 28, 14, 29, 15, 30, 16, 31, 17, 32, 18, 33, 19, 34)%>%
+  write_rds(here::here('data_clean', 'table_5_word.rds'))
+
+kable(table_5_word, caption = 'Table 5', "html") %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+```
+
+#### Smoking and COVID-19 mortality meta-analysis
+**There is currently no meta-analysis performed for deaths.**
+
+### Study quality assessment
+``` {r table_6}
+#Table 6
+table_6_word <- table_6 %>%
+  write_rds(here::here('data_clean', 'table_6_word.rds'))
+
+kable(table_6_word, caption = 'Table 6', "html", col.names = NULL) %>%
+    kable_styling() %>%
+    scroll_box(width = "1200px", height = "400px")
+```

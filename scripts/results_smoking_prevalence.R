@@ -76,4 +76,3 @@ ggplot(c, aes(x = smoking, y = prevalence, fill = study))+
   theme_bw()+
   theme(legend.position = 'bottom')
 
-grid.arrange(current_smoker, former_smoker, nrow = 2)
