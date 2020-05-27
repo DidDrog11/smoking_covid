@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ---
 title: "Smoking and COVID Living Review"
 author: "David Simons, Lion Shahab, Jamie Brown and Olga Perski"
@@ -1912,4 +1911,3 @@ kable(table_6_word, caption = 'Table 6', "html", col.names = NULL) %>%
     kable_styling() %>%
     scroll_box(width = "1200px", height = "400px")
 ```
->>>>>>> 252fe214a76b277056357e95185d736dfc417a5d
