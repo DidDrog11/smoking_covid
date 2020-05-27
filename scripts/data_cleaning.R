@@ -13,7 +13,7 @@ search_details <- read_sheet(sheets_id, range = 'article_screening')
 search_details <- search_details %>%
   clean_data() %>%
   rename(date_screened = date_screening_in_format_2020_05_22) %>%
-  write_rds(., 'data_clean/search_details.rds')
+  write_rds(here::here('data_clean', 'search_details.rds')
 
 data_study_general <- read_sheet(sheets_id, range =  'general_details')
 protect_columns_1 <- names(data_study_general) %in% 'doi'

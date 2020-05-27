@@ -1,8 +1,0 @@
-lead_author,sample_size,data_on_testing,contributing_sample,missing,negative_test,negative_current_smoker,negative_former_smoker,negative_current_former_smoker,negative_never_smoker,negative_not_stated,positive_test,positive_current_smoker,positive_former_smoker,positive_current_former_smoker,positive_never_smoker,positive_not_stated
-rentsch,3528,TRUE,3528,261,2974,1444,704,NA,826,NA,554,159,179,NA,216,0
-fontanet,661,TRUE,661,0,490,64,NA,NA,426,NA,171,5,NA,NA,166,NA
-cho,1331,TRUE,1331,0,793,142,214,NA,437,NA,538,111,145,NA,282,NA
-shah,316,TRUE,243,75,212,52,47,NA,113,NA,29,0,9,NA,20,NA
-bello_chavolla,62489,TRUE,62489,0,46960,NA,NA,4835,NA,42125,15529,NA,NA,1374,NA,14155
-kolin,1474,TRUE,1474,12,805,141,307,NA,354,3,669,72,285,NA,303,9
-de_lusignan,3802,TRUE,3291,511,NA,NA,NA,NA,NA,NA,551,47,303,NA,201,NA
