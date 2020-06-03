@@ -1,4 +1,10 @@
 base
+methods
+datasets
+utils
+grDevices
+graphics
+stats
 tidyverse
 ggplot2
 tibble
@@ -18,3 +24,4 @@ epitools
 meta
 knitr
 kableExtra
+here
