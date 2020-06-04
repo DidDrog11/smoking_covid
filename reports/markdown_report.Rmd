@@ -24,6 +24,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       warning = F,
                       message = F)
 
+unlink('reports/markdown_report_cache', recursive = TRUE)
 
 ```
 
@@ -49,7 +50,8 @@ library('meta', quietly = T)
 library('knitr', quietly = T)
 library('kableExtra', quietly = T)
 library('snakecase', quietly = T)
-
+library('here', quietly = T)
+library('flextable', quietly = T)
 ```
 
 ### Download from Google sheets
@@ -85,52 +87,72 @@ protect_columns_1 <- names(data_study_general) %in% 'doi'
 data_study_general <- data_study_general %>%
   rename('notes' = 11, date_published = `date_published_format(2020-05-12)`) %>%
   clean_data(protect = protect_columns_1) %>%
+  mutate(study_id = 1:length(lead_author)) %>%
   write_rds(here::here('data_clean', 'data_study_general.rds'))
 
 review_details <- data_study_general %>%
-  select(lead_author, date_published, country, review_version) %>%
+  select(study_id, date_published, country, review_version) %>%
   write_rds(here::here('data_clean', 'review_details.rds'))
 
 table_1 <- table_1 %>%
   clean_data() %>%
-  mutate(., lower_range = sub('\\_.*', '', .$range)) %>%
-  mutate(., upper_range = sub('.*_', '',.$range,)) %>%
-  select(1:9, 22:23, 11:21) %>%
+  mutate(., lower_range = sub('\\_.*', '', .$range),
+         upper_range = sub('.*_', '',.$range,),
+         study_id = 1:length(lead_author)) %>%
+  select(1:9, 22:23, 11:21, 24) %>%
   filter(!is.na(lead_author)) %>%
-  left_join(., review_details, by = 'lead_author') %>%
+  left_join(., review_details, by = 'study_id') %>%
   write_rds(here::here('data_clean', 'table_1.rds'))
 
 table_2 <-  table_2 %>%
   clean_data() %>%
+  mutate(study_id = 1:length(lead_author)) %>%
   filter(data_on_testing == TRUE) %>%
-  left_join(., review_details, by = 'lead_author') %>%
+  left_join(., review_details, by = 'study_id') %>%
   write_rds(here::here('data_clean', 'table_2.rds'))
 
 table_3 <-  table_3 %>%
   clean_data() %>%
+  mutate(study_id = 1:length(lead_author)) %>%
   filter(data_on_hospitalisation == TRUE) %>%
-  left_join(., review_details, by = 'lead_author') %>%
+  left_join(., review_details, by = 'study_id') %>%
   write_rds(here::here('data_clean', 'table_3.rds'))
 
 table_4 <-  table_4 %>%
   clean_data() %>%
+  mutate(study_id = 1:length(lead_author)) %>%
   filter(data_disease_severity == TRUE) %>%
-  left_join(., review_details, by = 'lead_author') %>%
+  left_join(., review_details, by = 'study_id') %>%
   write_rds(here::here('data_clean', 'table_4.rds'))
 
 table_5 <- table_5 %>%
   clean_data() %>%
+  mutate(study_id = 1:length(lead_author)) %>%
   filter(data_on_deaths == TRUE) %>%
-  left_join(., review_details, by = 'lead_author') %>%
+  left_join(., review_details, by = 'study_id') %>%
   write_rds(here::here('data_clean', 'table_5.rds'))
 
+protect_columns_2 <- !names(table_6) %in% 'Author'
 
 table_6 <-  table_6 %>%
-  write_rds(here::here('data_clean', 'table_6.rds')) 
+  clean_data(protect = protect_columns_2) %>%
+  left_join(., table_1 %>%
+              select(lead_author,
+                     not_stated,
+                     missing,
+                     total,
+                     study_id) %>%
+              rename('author' = lead_author),
+            by = 'author') %>%
+  mutate(missingness = rowSums(.[17:18], na.rm = T),
+         missingness_percentage = (missingness/total)*100) %>%
+  select(-c(not_stated, missing, total, missingness)) %>%
+  write_rds(here::here('data_clean', 'table_6.rds'))
+  
 
 kable(data_study_general[,1:4], caption = paste('The studies which have been entered into the Google sheet up until', Sys.Date(), 'are'), "html") %>%
     kable_styling() %>%
-    scroll_box(width = "1200px", height = "400px")
+    scroll_box(width = "1200px", height = "800px")
 
 ```
 
@@ -144,17 +166,17 @@ All data has now been stored in `.rds` format in the `/data_clean` folder. This 
 
 date_of_update <- Sys.Date()
 
-prev_versions <- c('v1', 'v2')
+prev_versions <- c('v1', 'v2', 'v3')
 #This can categorise which studies we want to look at
-current_version <- c('v3')
+current_version <- c('v4')
 #This will categorise which studies we are including in the current report
 
-analysed_versions <- c('v1', 'v2', 'v3')
+analysed_versions <- c('v1', 'v2', 'v3', 'v4')
 #This will incorporate all studies into the current version of the report
 
-exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old')
+exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra')
 
-exclude_from_qa <- c('ISARIC_1', 'ISARIC_2', 'ISARIC_3', 'Miyara')
+exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra')
 
 ```
 We are currently on **Version `r paste(current_version)`**.
@@ -166,39 +188,40 @@ We have excluded from the analysis the following studies: `r knitr::combine_word
 
 data_study_general <- data_study_general %>%
   filter(review_version %in% analysed_versions) %>%
-  filter(!lead_author %in% exclude_from_analysis) 
+  filter(!(lead_author %in% exclude_from_analysis)) %>%
+  write_csv(., here::here('data_clean', 'data_study_general.csv'))
 
 table_1 <- table_1 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
-  filter(!lead_author %in% exclude_from_analysis)
+  filter(!(lead_author %in% exclude_from_analysis))
 
 table_2 <- table_2 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
-  filter(!lead_author %in% exclude_from_analysis)
+  filter(!(lead_author %in% exclude_from_analysis))
 
 table_3 <- table_3 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
-  filter(!lead_author %in% exclude_from_analysis)
+  filter(!(lead_author %in% exclude_from_analysis))
 
 table_4 <- table_4 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
-  filter(!lead_author %in% exclude_from_analysis)
+  filter(!(lead_author %in% exclude_from_analysis))
 
 table_5 <- table_5 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
-  filter(!lead_author %in% exclude_from_analysis)
+  filter(!(lead_author %in% exclude_from_analysis))
 
 table_6 <- table_6 %>%
-  filter(!Author %in% exclude_from_qa)
+  filter(!(author %in% exclude_from_qa))
 
 kable(data_study_general[,c(1:4,6)], caption = 'The studies which are included in this report are', "html") %>%
     kable_styling() %>%
-    scroll_box(width = "1200px", height = "400px")
+    scroll_box(width = "1200px", height = "800px")
 ```  
 
 ## Descriptive analysis {.tabset .tabset-fade .tabset-pills}
@@ -209,13 +232,13 @@ kable(data_study_general[,c(1:4,6)], caption = 'The studies which are included i
 #Number screened to add to PRISMA
 from_prev_version <- data_study_general %>%
   filter(review_version %in% prev_versions) %>%
-  filter(!lead_author %in% exclude_from_analysis) %>%
+  filter(!(lead_author %in% exclude_from_analysis)) %>%
   tally()
 
 source(here::here('scripts', 'prisma_function.R'))
 
-PRISMA_v3 <- PRISMA(search_details)
-PRISMA_v3
+PRISMA_v4 <- PRISMA(search_details)
+PRISMA_v4
 
 ```
 
@@ -230,9 +253,21 @@ country <- table_1$country %>%
 
 ggplot(as_data_frame(country), aes(x = country))+
   geom_bar()+
+  coord_flip()+
   theme_bw()+
   labs(title = 'Countries where studies were performed',
        y = 'Count of studies')
+
+a <- flextable(
+  table(country) %>%
+  sort(., decreasing = T) %>%
+    as.data.frame())
+
+set_header_labels(a, country = 'Country',
+                  Freq = 'Number of studies') %>%
+  set_table_properties(width = 0.5, layout = 'autofit')
+  
+  
 
 ```
 
@@ -470,14 +505,15 @@ table_1_word <- table_1 %>%
   mutate(., missing_percentage = missing/total*100) %>%
   select(lead_author, date_published, country, sample_size, median_age, iqr_lower, iqr_upper, mean_age, lower_range, upper_range,
          standard_deviation, female_sex_percent, current_percentage, former_percentage, current_former_percentage,
-         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage)
+         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage, study_id)
 
 a <- data_study_general %>%
-  select(lead_author, study_setting)
+  select(study_id, study_setting)
 
-table_1_word <- left_join(table_1_word, a, by = 'lead_author') %>%
-  select(1:4, 20, 5:19) %>%
-  write_rds(here::here('data_clean', 'table_1_word.rds'))
+table_1_word <- left_join(table_1_word, a, by = 'study_id') %>%
+  select(1:4, 21, 5:20)
+table_1_word$date_published <- as.Date.character(table_1_word$date_published)
+write_rds(table_1_word, here::here('data_clean', 'table_1_word.rds'))
 
 kable(table_1_word, caption = 'Table 1', "html") %>%
     kable_styling() %>%
@@ -488,8 +524,8 @@ kable(table_1_word, caption = 'Table 1', "html") %>%
 ``` {r table_2}
 
 quality_rating <- table_6 %>%
-  select(Author, 16) %>%
-  rename('lead_author' = Author, 'overall_rating' = 2) %>%
+  select(author, 16:17) %>%
+  rename('lead_author' = author, 'overall_rating' = 2, 'missingness' = 3) %>%
   clean_data()
 
 #Table 2
