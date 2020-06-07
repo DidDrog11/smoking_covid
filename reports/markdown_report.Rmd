@@ -515,7 +515,11 @@ We have split the data into a list where each country can be analysed separately
 
 ### Graph for smoking prevalence in the countries included
 
-![Country smoking prevalence](figure/fig_2.png)
+#### Current smoking prevalence
+![Country smoking prevalence](reports/figure/fig_2a.png)
+
+#### Former smoker prevalence
+![Country former smoking prevalence](reports/figure/fig_2b.png)
 
 ## Final results tables and meta-analyses {.tabset .tabset-fade .tabset-pills}
 
@@ -847,7 +851,7 @@ null <- dev.off()
 a
 ```
 
-![Current versus never smokers](figure/fig_3.png)
+![Current versus never smokers](reports/figure/fig_3.png)
 
   * **Former versus never smokers**
 ```{r former_never}
@@ -886,7 +890,7 @@ a
 
 ```
 
-![Former versus never smokers](figure/fig_4.png)
+![Former versus never smokers](reports/figure/fig_4.png)
 
 ### Table 3: Smoking and COVID-19 hospitalisation
 ``` {r table_3}
@@ -1098,7 +1102,7 @@ null <- dev.off()
 
 a
 ```
-![Current versus never smokers](figure/fig_5.png)
+![Current versus never smokers](reports/figure/fig_5.png)
 
 ```{r}
 # Former smoker hospitalisation -------------------------------------------
@@ -1143,7 +1147,7 @@ former_smoker_hospitalisation <- forest(event_rates_former,
 null <- dev.off()
 a
 ```
-![Former versus never smokers](figure/fig_6.png)
+![Former versus never smokers](reports/figure/fig_6.png)
 
 
 ### Table 4: Smoking and COVID-19 disease severity
@@ -1352,7 +1356,7 @@ null <- dev.off()
 
 event_rates_smoker
 ```
-![Current versus never smokers](figure/fig_7.png)
+![Current versus never smokers](reports/figure/fig_7.png)
 
 ```{r}
 # Former smoker hospitalisation -------------------------------------------
@@ -1397,7 +1401,7 @@ null <- dev.off()
 event_rates_former
 
 ```
-![Former versus never smokers](figure/fig_8.png)
+![Former versus never smokers](reports/figure/fig_8.png)
 
 ### Table 5: Smoking and COVID-19 mortality
 
@@ -1608,7 +1612,7 @@ null <- dev.off()
 
 event_rates_smoker
 ```
-![Current versus never smokers](figure/fig_9.png)
+![Current versus never smokers](reports/figure/fig_9.png)
 
 ```{r}
 # Former smoker mortality ------------------------------------------
@@ -1653,7 +1657,7 @@ event_rates_former
 
 ```
 
-![Former versus never smokers](figure/fig_10.png)
+![Former versus never smokers](reports/figure/fig_10.png)
 
 ### Study quality assessment
 ``` {r table_6}
