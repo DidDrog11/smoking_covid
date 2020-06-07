@@ -51,7 +51,7 @@ opensafely_collaborative,2020-05-07,medrxiv,https://doi.org/10.1101/2020.05.06.2
 borobia,2020-05-06,medrxiv,https://doi.org/10.1101/2020.04.29.20080853,david,v3,spain,retrospective_cohort,hospital,2226,NA,55
 giacomelli,2020-05-06,medrxiv,https://doi.org/10.1101/2020.05.02.20088336.,david,v3,italy,prospective_cohort,hospital,233,NA,56
 shah,2020-05-06,medrxiv,https://doi.org/10.1101/2020.05.02.20082461,david,v3,usa,prospective_cohort,hospital,316,NA,57
-bello_chavolla,2020-05-06,medrxiv,https://doi.org/10.1101/2020.04.20.20072223.,david,v3,mexico,retrospective_cohort,community_and_hospital,71103,NA,58
+bello_chavolla,2020-05-06,medrxiv,https://doi.org/10.1101/2020.04.20.20072223,david,v3,mexico,retrospective_cohort,community_and_hospital,71103,NA,58
 kolin,2020-05-05,medrxiv,https://doi.org/10.1101/2020.05.05.20075507,david,v3,uk,cross_sectional,community_and_hospital,1474,uk_biobank_cohort,59
 lubetzky,2020-05-08,medrxiv,https://doi.org/10.1101/2020.04.30.20086462,david,v3,usa,retrospective_cohort,hospital,54,NA,60
 goyal,2020-04-17,nejm,10.1056/NEJMc2010419,david,v3,usa,retrospective_cohort,hospital,393,NA,61
@@ -69,7 +69,7 @@ valenti,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.11.20098442,rosemary,
 feuth,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.14.20098319,rosemary,v4,finland,retrospective_cohort,hospital,28,all_icu_ctitically_vs_severely_ill,74
 heng,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.12.20095885,rosemary,v4,china,prospective_cohort,hospital,51,NA,75
 parrotta,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.12.20094508,rosemary,v4,usa,retrospective_cohort,community_and_hospital,76,NA,76
-shekar,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.15.20094284,rosemary,v4,usa,retrospective_prospective_cohort_study,hospital,50,NA,77
+shekar,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.15.20094284,rosemary,v4,usa,prospective_cohort,hospital,50,NA,77
 mejia_vilet,2020-05-16,medrxiv,https://doi.org/10.1101/2020.05.12.20099416,rosemary,v4,mexico,prospective_cohort,hospital,329,NA,78
 chen_jiang,2020-05-16,medrxiv,https://doi.org/10.1101/2020.05.13.20099614,rosemary,v4,china,cross_sectional,hospital,135,NA,79
 jiong,2020-05-16,medrxiv,https://doi.org/10.1101/2020.05.13.20100370,rosemary,v4,china,retrospective_cohort,hospital,1008,NA,80
@@ -80,7 +80,7 @@ heili_frades,2020-05-25,medrxiv,https://doi.org/10.1101/2020.05.22.20109850,rose
 vaquero_roncero,2020-05-24,medrxiv,https://doi.org/10.1101/2020.05.22.20110429,rosemary,v4,spain,retrospective_cohort,hospital,146,NA,85
 kim_garg,2020-05-22,medrxiv,https://doi.org/10.1101/2020.05.18.20103390,rosemary,v4,usa,retrospective_cohort,hospital,2491,NA,86
 wu,2020-05-21,medrxiv,https://doi.org/10.1101/2020.05.17.20104877,rosemary,v4,italy,retrospective_cohort,hospital,174,NA,87
-hopkinson,2020-05-21,medrxiv,https://doi.org/10.1101/2020.05.18.20105288,rosemary,v4,uk,prospective_cohort,community,2401982,NA,88
+hopkinson,2020-05-21,medrxiv,https://doi.org/10.1101/2020.05.18.20105288,rosemary,v4,uk,cross_sectional,community,2401982,NA,88
 shi_zhao,2020-05-20,medrxiv,https://doi.org/10.1101/2020.03.04.20031039,rosemary,v4,china,retrospective_cohort,hospital,101,NA,89
 kimmig,2020-05-20,medrxiv,https://doi.org/10.1101/2020.05.15.20103531,rosemary,v4,usa,retrospective_cohort,hospital,60,NA,90
 al_hindawi,2020-05-20,medrxiv,https://doi.org/10.1101/2020.05.16.20103853,rosemary,v4,uk,retrospective_cohort,hospital,31,NA,91
@@ -101,3 +101,4 @@ soto_mota,2020-05-27,medrxiv,https://doi.org/10.1101/2020.05.26.20111120,rosemar
 patel,2020-05-26,medrxiv,https://doi.org/10.1101/2020.05.22.20109355,rosemary,v4,usa,retrospective_cohort,hospital,104,NA,106
 garibaldi,2020-05-26,medrxiv,https://doi.org/10.1101/2020.05.24.20111864,rosemary,v4,usa,retrospective_cohort,hospital,832,NA,107
 docherty,2020-05-22,bmj,https://doi.org/10.1136/bmj.m1985,david,v4,multiple,prospective_cohort,hospital,20133,NA,108
+boulware,2020-03-06,nejm,https://doi.org/10.1056/NEJMoa2016638,olga,v4,multiple,rct,community,821,us_and_canada,109

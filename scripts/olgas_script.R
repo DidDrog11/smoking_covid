@@ -3,8 +3,10 @@ library(here)
 library(linelist)
 library(boot)
 library(googlesheets4)
+
 source(here("scripts", "bootstrap_function.R"))
 
+set.seed(42)
 sheets_id <- as_sheets_id('https://docs.google.com/spreadsheets/d/15avypGR8ypJngWQEmFIzFrOOwXPY3xezUHQU6jgV7d0/edit?usp=sharing')
 smoking_status <- c('current_smoker', 'former_smoker', 'current_former_smoker', 'never_smoker', 'never_smoker_unknown', 'not_stated', 'missing')
 table_1 <- read_rds(here("data_clean", "table_1.rds"))
@@ -66,8 +68,9 @@ b <- prevalence_plot %>%
   group_by(country, study_id)
 
 
-b$study <- as.factor(b$study)
 
+b$study <- as.factor(b$study)
+b$sample[bootstrap$sample >= 50000] <- 50000
 bootstrap <- b %>%
   filter(study != 0) %>%
   select(study_id, sample, current_smoking_p, former_smoking_p) %>%
@@ -76,16 +79,14 @@ bootstrap <- b %>%
          bs_inverse = sample*(1-current_smoking_p),
          bs_former = sample*former_smoking_p,
          bs_inverse_former = sample*(1-former_smoking_p))
-bootstrap$sample[bootstrap$sample >= 5000] <- 5000
+
+
+
+# Bootstrap ---------------------------------------------------------------
 
 bootstrap_output_c <- list()
-
 for(i in 1:length(bootstrap$study_id)) {
-  set.seed(42)
-  x <- bootstrap$bs_current[i]
-  y <- bootstrap$bs_inverse[i]
-  my_sample <- c(rep(1, each = x), rep(0, each = y))
-  bootstrap_output_c[[i]] <- boot.mean(my_sample,5)$interval
+  bootstrap_output_c <- do_bootstrap_current(i)
 }
 
 bootstrap_current <- do.call(rbind.data.frame, bootstrap_output_c) %>%
@@ -95,13 +96,8 @@ bootstrap_current <- do.call(rbind.data.frame, bootstrap_output_c) %>%
          smoking = "current_smoking_p")
 
 bootstrap_output_f <- list()
-
 for(i in 1:length(bootstrap$study_id)) {
-  set.seed(42)
-  x <- bootstrap$bs_former[i]
-  y <- bootstrap$bs_inverse_former[i]
-  my_sample <- c(rep(1, each = x), rep(0, each = y))
-  bootstrap_output_f[[i]] <- boot.mean(my_sample,5)$interval
+  bootstrap_output_f <- do_bootstrap_former(i)
 }
 
 bootstrap_former <- do.call(rbind.data.frame, bootstrap_output_f) %>%
@@ -127,9 +123,9 @@ c$country <- c$country %>%
   snakecase::to_upper_camel_case() %>%
   recode('Usa' = 'USA', 'Uk' = 'UK', "SaudiArabia" = "Saudi Arabia")
 
-d <- ggplot(c, aes(x = smoking, y = prevalence, fill = study))+
-  geom_dotplot(binaxis = 'y', method = 'histodot', stackdir = 'center', binpositions = 'all', dotsize = 1, stackgroups = T)+
-  geom_errorbar(aes(ymin = lower_ci, ymax = upper_ci),width=0.05) +
+d <- ggplot(c, aes(x = smoking, y = prevalence, fill = study, ymin = lower_ci, ymax = upper_ci))+
+  geom_dotplot(binaxis = 'y', method = 'histodot', stackdir = 'center', binpositions = 'all', dotsize = 0.8, stackgroups = T)+
+  geom_linerange() +
   facet_wrap(~reorder(country, -n), nrow = 2)+
   labs(title = 'Smoking prevalence in included studies compared with national prevalence', y = 'Prevalence', fill = '')+
   scale_fill_discrete(labels = c('National prevalence', 'Study population prevalence'))+
@@ -138,3 +134,20 @@ d <- ggplot(c, aes(x = smoking, y = prevalence, fill = study))+
   theme(legend.position = 'bottom')
 
 d
+
+png(here::here('reports', 'figure', 'fig_2.png'), width=1024, height=546, res=120)
+d
+null <- dev.off()
+
+e <- ggplot(c, aes(x = smoking, y = prevalence, fill = study))+
+  geom_dotplot(binaxis = 'y', method = 'histodot', stackdir = 'center', binpositions = 'all', dotsize = 1, stackgroups = T)+
+  facet_wrap(~reorder(country, -n), nrow = 2)+
+  labs(title = 'Smoking prevalence in included studies compared with national prevalence', y = 'Prevalence', fill = '')+
+  scale_fill_discrete(labels = c('National prevalence', 'Study population prevalence'))+
+  scale_x_discrete(name = 'Smoking status', labels = c('Current', 'Former'))+
+  theme_bw()+
+  theme(legend.position = 'bottom')
+
+png(here::here('reports', 'figure', 'fig_2b.png'), width=1024, height=546, res=120)
+e
+null <- dev.off()
