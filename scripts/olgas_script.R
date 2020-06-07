@@ -58,15 +58,15 @@ b <- prevalence_plot %>%
   filter(country != 'multiple') %>%
   mutate(study_id = 1:nrow(.)) %>%
   mutate(current_smoking_p = p_current_smoker,
-         former_smoking_p = p_former_smoker) %>%
+         former_smoking_p = p_former_smoker,
+         true_sample = sample) %>%
   add_row(country = national_smoking_prevalence$country,
           current_smoking_p = national_smoking_prevalence$current_smoking_p, 
           former_smoking_p = national_smoking_prevalence$former_smoking_p, 
           study = national_smoking_prevalence$study) %>%
-  select(country, sample, study, current_smoking_p, former_smoking_p, study_id) %>%
+  select(country, sample, study, current_smoking_p, former_smoking_p, study_id, true_sample) %>%
   add_count(country) %>%
   group_by(country, study_id)
-
 
 
 b$study <- as.factor(b$study)
@@ -112,7 +112,7 @@ bootstrap_ci <- bootstrap_current %>%
   mutate(lower_ci = ifelse(is.na(lower_CI_current), lower_CI_former, lower_CI_current),
          upper_ci = ifelse(is.na(upper_CI_current), upper_CI_former, upper_CI_current)) %>%
   select(study_id, smoking, lower_ci, upper_ci)
-
+ 
 c <- b %>%
   pivot_longer(., c(current_smoking_p, former_smoking_p), 
                names_to = 'smoking', values_to = 'prevalence') %>%
@@ -122,6 +122,8 @@ c <- b %>%
 c$country <- c$country %>%
   snakecase::to_upper_camel_case() %>%
   recode('Usa' = 'USA', 'Uk' = 'UK', "SaudiArabia" = "Saudi Arabia")
+
+write_rds(c, here::here('data_clean', 'country_prevalence_data.rds'))
 
 d <- ggplot(c, aes(x = smoking, y = prevalence, fill = study, ymin = lower_ci, ymax = upper_ci))+
   geom_dotplot(binaxis = 'y', method = 'histodot', stackdir = 'center', binpositions = 'all', dotsize = 0.8, stackgroups = T)+
