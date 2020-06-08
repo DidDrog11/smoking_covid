@@ -516,10 +516,10 @@ We have split the data into a list where each country can be analysed separately
 ### Graph for smoking prevalence in the countries included
 
 #### Current smoking prevalence
-![Country smoking prevalence](reports/figure/fig_2a.png)
+![Country smoking prevalence](figure/figure_2a.png)
 
 #### Former smoker prevalence
-![Country former smoking prevalence](reports/figure/fig_2b.png)
+![Country former smoking prevalence](figure/figure_2b.png)
 
 ## Final results tables and meta-analyses {.tabset .tabset-fade .tabset-pills}
 
