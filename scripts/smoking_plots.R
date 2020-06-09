@@ -75,7 +75,7 @@ a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_coun
   labs(title ="Prevalence of current smoking in included studies")
 a
 
-png(here::here('reports', 'figure', 'figure_2a.png'), width=739, height=784, res = 120)
+png(here::here('reports', 'figure', 'figure_2a.png'), width=912, height=970, res = 120)
 a
 null <- dev.off()
 
@@ -117,6 +117,6 @@ a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count
   labs(title ="Prevalence of former smoking in included studies")
 a
 
-png(here::here('reports', 'figure', 'figure_2b.png'), width=739, height=784, res = 120)
+png(here::here('reports', 'figure', 'figure_2b.png'), width=912, height=967, res = 120)
 a
 null <- dev.off()
