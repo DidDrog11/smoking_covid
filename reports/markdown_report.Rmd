@@ -266,9 +266,9 @@ analysed_versions <- c('v1', 'v2', 'v3', 'v4')
 
 As we don't want to remove studies from the dataset despite them no longer being included the excluded studies are defined in this chunk of code.
 ``` {r excluding_studies}
-exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra')
+exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson')
 
-exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra')
+exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra', 'hopkinson')
 ```
 We have excluded from the analysis the following studies: `r knitr::combine_words(exclude_from_analysis)`
 
@@ -616,22 +616,30 @@ This graph is for former smoking prevalence. The data is more sparse for this ex
 
 #Updating table 1
 table_1_word <- table_1 %>%
-  mutate(., current_percentage = current_smoker/total*100) %>%
-  mutate(., former_percentage = former_smoker/total*100) %>%
-  mutate(., current_former_percentage = current_former_smoker/total*100) %>%
-  mutate(., never_smoker_percentage = never_smoker/total*100) %>%
-  mutate(., never_smoker_unknown_percentage = never_smoker_unknown/total*100) %>%
-  mutate(., not_stated_percentage = not_stated/total*100) %>%
-  mutate(., missing_percentage = missing/total*100) %>%
+  mutate(., current_percentage = current_smoker/total*100,
+         former_percentage = former_smoker/total*100,
+         current_former_percentage = current_former_smoker/total*100,
+         never_smoker_percentage = never_smoker/total*100,
+         never_smoker_unknown_percentage = never_smoker_unknown/total*100,
+         not_stated_percentage = not_stated/total*100,
+         missing_percentage = missing/total*100) %>%
   select(lead_author, date_published, country, sample_size, median_age, iqr_lower, iqr_upper, mean_age, lower_range,
          upper_range, standard_deviation, female_sex_percent, current_percentage, former_percentage, current_former_percentage,
-         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage, study_id)
+         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage, study_id) %>%
+  replace_na(., list(not_stated_percentage = 0, missing_percentage = 0)) %>%
+  mutate(., missing_percentage = not_stated_percentage + missing_percentage,
+         missing_percentage = formatC(missing_percentage, digits = 2, format = "f")) %>%
+  left_join(., table_6 %>%
+              rename(lead_author = 'author') %>%
+              select(lead_author, "Overall rating (poor, fair, good)"),
+            by = 'lead_author')
+           
 
 a <- data_study_general %>%
   select(study_id, study_setting)
 
 table_1_word <- left_join(table_1_word, a, by = 'study_id') %>%
-  select(1:4, 21, 5:20)
+  select(1:4, 22, 5:20, 21)
 table_1_word$date_published <- as.Date.character(table_1_word$date_published)
 write_rds(table_1_word, here::here('data_clean', 'table_1_word.rds'))
 
@@ -654,7 +662,7 @@ a$iqr_used <- coalesce(a$range_used, a$st_dev_used)
 a <- a %>%
   select(study_id, lead_author, date_published, country, sample_size, study_setting, median_mean, mean_used, iqr,
          female_sex_percent, current_percentage, current_former_percentage, never_smoker_percentage,
-         never_smoker_unknown_percentage, not_stated_percentage, missing_percentage) %>%
+         never_smoker_unknown_percentage, missing_percentage, "Overall rating (poor, fair, good)") %>%
   mutate(median_mean = paste(median_mean, mean_used, sep = ''),
          median_mean = na_if(median_mean, NA)) %>%
   select(-mean_used) %>%
@@ -672,7 +680,6 @@ a <- a %>%
          'Current/former smokers %' = current_former_percentage,
          'Never smokers %' = never_smoker_percentage,
          'Never/unknown smokers %' = never_smoker_unknown_percentage,
-         'Not stated %' = not_stated_percentage,
          'Missing %' = missing_percentage)
          
 a$`Lead author` <- to_upper_camel_case(a$`Lead author`, sep_out = ", ")
@@ -699,16 +706,18 @@ a$`Country` <- a$Country %>%
          'Uk' = 'UK')
 
 numeric_columns <- c('Median (IQR)', 'Female %', 'Current smoker %', 'Current/former smokers %',
-                     'Never smokers %', 'Never/unknown smokers %', 'Not stated %', 'Missing %')
+                     'Never smokers %', 'Never/unknown smokers %', 'Missing %')
 
 datatable(a) %>%
   formatRound(
-    columns = c(4, 8:15),
+    columns = c(4, 8:14),
     digits = 2,
     interval = 3,
     mark = ",",
     dec.mark = getOption("OutDec")
 )
+
+a 
 
 a <- flextable(a) %>%
     set_caption(caption = 'Characteristics of included studies') %>%
@@ -1638,7 +1647,6 @@ a <- set_header_labels(a,
 a
 
 save_as_docx(a, path = here('data_clean', 'Table_5.docx'))
-
 ```
 The number of studies reporting on hospitalisation by smoking status is: `r paste(nrow(table_5_word))`
 
@@ -1762,24 +1770,27 @@ table_6_word <- table_6 %>%
 
 a <- table_6_word %>%
   rename("Lead Author" = 1,
-         "Question 1." = 2,
-         "Question 2." = 3,
-         "Question 3." = 4,
-         "Question 4." = 5,
-         "Question 5." = 6,
-         "Question 6." = 7,
-         "Question 7." = 8,
-         "Question 8." = 9,
-         "Question 9." = 10,
-         "Question 10." = 11,
-         "Question 11." = 12,
-         "Question 12." = 13,
-         "Question 13." = 14,
-         "Question 14." = 15,
+         "1." = 2,
+         "2." = 3,
+         "3." = 4,
+         "4." = 5,
+         "5." = 6,
+         "6." = 7,
+         "7." = 8,
+         "8." = 9,
+         "9." = 10,
+         "10." = 11,
+         "11." = 12,
+         "12." = 13,
+         "13." = 14,
+         "14." = 15,
          "Missing data" = 17,
          "Overall rating (Poor, Fair, Good)" = 16) %>%
   mutate(`Missing data` = if_else(is.na(`Missing data`), 0, `Missing data`)) %>%
   select(1:15, 17, 16)
+
+fair <- nrow(filter(a, a$`Overall rating (Poor, Fair, Good)` == "Fair" ))
+poor <- nrow(filter(a, a$`Overall rating (Poor, Fair, Good)` == "Poor" ))
 
 a$`Lead Author` <- to_upper_camel_case(a$`Lead Author`, sep_out = ", ")
 a$`Lead Author`  <- a$`Lead Author`  %>%
@@ -1800,17 +1811,17 @@ a$`Lead Author`  <- a$`Lead Author`  %>%
 a <- a %>%
   mutate("Missing data" = formatC(a$`Missing data`, digits = 2, format = "f"))
 a$`Missing data` <- paste0(a$`Missing data`, "%")
-         
-datatable(a)         
-         
-a <- flextable(a) %>%
+
+b <- flextable(a) %>%
     set_caption(caption = 'National Institutes of Health’s Quality Assessment Tool for Observational Cohort and Cross-Sectional Studies') %>%
   colformat_char(na_str = '-') %>%
+  add_header_row(top = TRUE, values = c("","Question Number", "" ), colwidths = c(1, 14, 2)) %>%
   theme_booktabs() %>%
   fix_border_issues() %>%
   set_table_properties(width = 1, layout = 'autofit')
 
-a <- table_6_word %>%
-  filter(`Overall rating (poor, fair, good)` == "Fair")
+save_as_docx(b, path = here('data_clean', 'Table_6.docx'))
+
+datatable(a)
 ```
-The number of **Fair** quality studies are `r paste(nrow(table_6_word)-nrow(a))` with the number of **Poor** quality studies equal to `r paste(nrow(a))`
+The number of **Fair** quality studies are `r paste(fair)` with the number of **Poor** quality studies equal to `r paste(poor)`
