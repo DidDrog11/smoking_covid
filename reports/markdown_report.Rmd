@@ -14,6 +14,7 @@ output:
     toc_depth: 3
     toc_float: yes
     css: !expr here::here('css', 'style.css')
+    keep_md: true
 editor_options: 
   chunk_output_type: inline
 ---
@@ -52,15 +53,18 @@ library('kableExtra', quietly = T)
 library('snakecase', quietly = T)
 library('here', quietly = T)
 library('flextable', quietly = T)
+library('DT', quietly = T)
 ```
 
 ### Download from Google sheets
 
 * **Load data**: import raw dataset directly from Google sheets
+We import the data from the dataset that is available in the "data for analysis" folder on the Google drive. This is available to be viewed with the [link](https://docs.google.com/spreadsheets/d/1AKSPbmGLuTcb5H47KBF--lJw66Vv5fuieYvdlwevrUc/edit?usp=sharing) and is only available for viewing not editing. 
+
+In future versions we may open a tab in the Google sheet to allow people to submit relevant papers for us to incorporate in our review.
 
 ```{r raw_data, cache=T}
-here()
-sheets_id <- as_sheets_id('https://docs.google.com/spreadsheets/d/15avypGR8ypJngWQEmFIzFrOOwXPY3xezUHQU6jgV7d0/edit?usp=sharing')
+sheets_id <- as_sheets_id('https://docs.google.com/spreadsheets/d/1AKSPbmGLuTcb5H47KBF--lJw66Vv5fuieYvdlwevrUc/edit?usp=sharing')
 search_details <- read_sheet(sheets_id, range = 'article_screening')
 data_study_general <- read_sheet(sheets_id, range =  'general_details')
 table_1 <- read_sheet(sheets_id, sheet = 'pop_descriptives')
@@ -72,36 +76,110 @@ table_6 <-  read_sheet(sheets_id, sheet = 'quality_appraisal')
 
 ```
 
+The data is downloaded from the sheet and split into dataframes to represent the current sheets and analysis.
+
+The first sheet is **Search details**  we use this sheet to keep track of the number of studies found in our search and keep track of the number of titles and abstracts screened and number of papers included in each review version. It presents the data in groups of search periods.
+
+```{r head_search_details}
+flextable(head(search_details))
+```
+
+The second sheet is **General study details** this includes the lead author, where the study is published, the date it was published, the country in which the data originated and the DoI or link to the publication for our records.
+
+This is a searchable list of all the studies that have met out inclusion and exclusion criteria up until 2020/06/02
+```{r tail_study_details}
+datatable(data_study_general[1:3] %>%
+            mutate(`date_published_format(2020-05-12)` = as.Date(data_study_general$`date_published_format(2020-05-12)`)),
+          colnames = c("Lead author" = 2, "Date published" = 3, "Source" = 4))
+
+```
+
+The third sheet is termed **Table 1** this contains the details of the population of the study in relation to our review. Predominantly smoking status but also the proportion of females in the study and the age of participants.
+
+```{r tail_table_1}
+flextable(tail(table_1))
+```
+
+The fourth sheet is termed **Table 2** this contains the data extracted from relevant studies on testing data and smoking status. Most studies will not have data on this outcome however we filter these subsequently. These are sparse datasets as many studies do not report on all levels of smoking exposure.
+
+```{r tail_table_2}
+flextable(
+  table_2 %>%
+  filter(data_on_testing == TRUE) %>%
+  tail()
+)
+```
+
+The fourth sheet is termed **Table 3** this contains the data extracted from relevant studies on hospitalisation and smoking status. 
+
+```{r tail_table_3}
+flextable(
+  table_3 %>%
+  filter(data_on_hospitalisation == TRUE) %>%
+  tail()
+)
+```
+
+The fourth sheet is termed **Table 4** this contains the data extracted from relevant studies disease severity data and smoking status. Disease severity is differentially reported across the studies in some there is reference to WHO severity score in others we have based the distinction on clinical characteristics or whether patients were admitted to Intensive or Critical care areas.
+
+```{r tail_table_4}
+flextable(
+  table_4 %>%
+  filter(data_disease_severity == TRUE) %>%
+  tail()
+)
+```
+
+The fifth sheet is termed **Table 5** this contains the data extracted from relevant studies on COVID-19 related mortality and smoking status. A caution needed when interpreting this data is that most studies have not followed patients up for sufficient amounts of time to be able to accurately report on disease associated mortality.
+
+```{r tail_table_5}
+flextable(
+  table_5 %>%
+  filter(data_on_deaths == TRUE) %>%
+  tail()
+)
+```
+
+The final sheet was used to collate data on **Study quality** however, we have discontinued the use of this tool from version 3 due to the large number of components that were unable to be assessed in the rapidly expanding area of COVID-19 related research.
+
 ### Clean data and save updated versions as RDS files
+
+The data from the google sheets document is then cleaned using a script from the `linelist` package which has been developed by T. Jombat and Z. Kamvar within the [R Epidemics Consortium](https://www.repidemicsconsortium.org/)
+
+The script `clean_data()` ensures consistency among column names, country names, dates and missing values in the included sheets. Data is also saves as `.rds` files in the `/data_clean` folder of the project directory. 
 
 ```{r clean_data}
 
 search_details <- search_details %>%
   clean_data() %>%
   rename(date_screened = date_screening_in_format_2020_05_22) %>%
-  write_rds(here::here('data_clean', 'search_details.rds'))
+  write_rds(here::here('data_clean', 'search_details.rds')) ## The title of the date screened column is to communicate among the review team how we need date formatted
 
-
-protect_columns_1 <- names(data_study_general) %in% 'doi'
+protect_columns_1 <- names(data_study_general) %in% 'doi' ## As the DoI's are links we want to preserve their formatting when running the cleaning script
 
 data_study_general <- data_study_general %>%
   rename('notes' = 11, date_published = `date_published_format(2020-05-12)`) %>%
   clean_data(protect = protect_columns_1) %>%
-  mutate(study_id = 1:length(lead_author)) %>%
+  mutate(study_id = 1:length(lead_author)) %>% ## We create a unique study ID to aid checking of the outputs later
   write_rds(here::here('data_clean', 'data_study_general.rds'))
 
 review_details <- data_study_general %>%
-  select(lead_author, date_published, country, review_version, study_id) %>%
+  select(lead_author, date_published, country, review_version, study_id) %>% ## The version of the review in which included studies were incorporated is noted
   write_rds(here::here('data_clean', 'review_details.rds'))
 
 table_1 <- table_1 %>%
   clean_data() %>%
   mutate(., lower_range = sub('\\_.*', '', .$range)) %>%
-  mutate(., upper_range = sub('.*_', '',.$range,)) %>%
-  select(1:9, 22:23, 11:21) %>%
+  mutate(., upper_range = sub('.*_', '',.$range,)) %>% ## We break apart the age range into an upper and lower level
+  select(lead_author, sample_size, female_sex_percent, data_source, median_age, mean_age, iqr_lower, iqr_upper, standard_deviation, lower_range,
+         upper_range, current_smoker, former_smoker, current_former_smoker, never_smoker, never_smoker_unknown, current_vaper, former_vaper,
+         current_former_vaper, not_stated, missing, total) %>%
   filter(!is.na(lead_author)) %>%
   left_join(., review_details, by = 'lead_author') %>%
   write_rds(here::here('data_clean', 'table_1.rds'))
+
+
+##For the following tables we're only interested in obtaining data for trials which report on the specific outcome of interest
 
 table_2 <-  table_2 %>%
   clean_data() %>%
@@ -140,7 +218,7 @@ table_6 <-  table_6 %>%
               rename('author' = lead_author),
             by = 'author') %>%
   mutate(missingness = rowSums(.[17:18], na.rm = T),
-         missingness_percentage = (missingness/total)*100) %>%
+         missingness_percentage = (missingness/total)*100) %>% ## Later we want to assess the amount of missingness for each study as it would impact the inclusion of a study into the relevant meta-analyses
   select(-c(not_stated, missing, total, missingness)) %>%
   write_rds(here::here('data_clean', 'table_6.rds'))
 
@@ -156,22 +234,25 @@ a$`Publication Source` <- to_title_case(a$`Publication Source`)
 a$`Publication Source` <- if_else(str_length(a$`Publication Source`) < 5,
                                   toupper(a$`Publication Source`),
                                   to_title_case(a$`Publication Source`))
+```
+
+This is a table containing all studies included in the google sheets document. We only perform analysis on a subset of these studies due to there being for example duplication of reports such as the ISARIC reports or superseeded and retracted articles.
+
+``` {r save_as_table_for_word}
+datatable(a)
 
 a <- flextable(a)%>%
   set_caption(a, caption = 'All studies included in data extraction') %>%
-  set_table_properties(width = 1, layout = 'autofit') %>%
-  save_as_docx(a, path = here('data_clean', 'all_studies.docx'))
+  set_table_properties(width = 1, layout = 'autofit')
 
+save_as_docx(a, path = here('data_clean', 'all_studies.docx'))
 ```
-
-All data has now been stored in `.rds` format in the `/data_clean` folder. This can be analysed outside of the report using pre-generated scripts or user created scripts. 
-
 ## Preparing the descriptive analysis {.tabset .tabset-fade .tabset-pills}
 
 ### Choosing which data we want to include in the current review? 
 
+We define the current version of the report here. At the moment this needs to be changed directly in the underlying code.
 ``` {r versioning}
-
 date_of_update <- Sys.Date()
 
 prev_versions <- c('v1', 'v2', 'v3')
@@ -181,17 +262,20 @@ current_version <- c('v4')
 
 analysed_versions <- c('v1', 'v2', 'v3', 'v4')
 #This will incorporate all studies into the current version of the report
-
-exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra')
-
-exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra')
-
 ```
-We are currently on **Version `r paste(current_version)`**.
+
+As we don't want to remove studies from the dataset despite them no longer being included the excluded studies are defined in this chunk of code.
+``` {r excluding_studies}
+exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson')
+
+exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra', 'hopkinson')
+```
 We have excluded from the analysis the following studies: `r knitr::combine_words(exclude_from_analysis)`
 
-### Filter the included studies
+As a sense check this line pulls in the defined current version, which is: **`r paste(current_version)`**.
 
+### Filter the included studies
+Based on the version and excluded studies we produce the tables for analysis. These are shown below.
 ``` {r descriptives}
 
 data_study_general <- data_study_general %>%
@@ -240,13 +324,13 @@ a$`Publication Source` <- if_else(str_length(a$`Publication Source`) < 5,
                                   toupper(a$`Publication Source`),
                                   to_title_case(a$`Publication Source`))
 
+datatable(a)
+
 a <- flextable(a)%>%
   set_table_properties(width = 1, layout = 'autofit') %>%
   set_caption(caption = 'Studies included in the current analysis')
 
 save_as_docx(a, path = here('data_clean', 'included_studies.docx'))
-
-a
 ```  
 
 ## Descriptive analysis {.tabset .tabset-fade .tabset-pills}
@@ -278,8 +362,11 @@ save_as_docx(a, path = here('data_clean', 'PRISMA_details.docx'))
 a
 
 ```
+The numbers included in the quantitative analysis are based meeting quality eligibility criteria and are calculated by hand.
 
 ### We summarise where the studies were conducted
+
+As the pandemic continues studies are being reported from increasing numbers of countries.
 
 ``` {r countries}
 #Countries
@@ -310,6 +397,8 @@ save_as_docx(a, path = here('data_clean', 'Countries_performing_studies.docx'))
 
 ### We sumarise the settings in which they were conducted
 
+Most studies are performed in hospital settings. Some studies are conducted in both such as those in emergency departments where patients are discharged home and followed up. Some registry studies utilising primary care networks are solely conducted in the community.
+
 ``` {r setting}
 
 #Setting
@@ -331,27 +420,20 @@ save_as_docx(a, path = here('data_clean', 'Countries_performing_studies.docx'))
 
 ### We update the number of participants we have included
 
-* **Summary statistics:** This table will give us the mean, median and IQR of the samples in the review 
+* **Summary statistics:** this table will give us the mean, median and IQR of the samples in the review 
 
 ``` {r numbers}
-
 #Numbers
-summary(table_1$sample_size)
-
-
-```
-
-* **The total number of participants**
-
-``` {r sample}
-
-#Number of participants
-sum(table_1$sample_size)
+a <- summary(table_1$sample_size)
+a
 
 ```
+
+* **Total number of participants**: `r paste(sum(table_1$sample_size))`
 
 ### We want to know if they use a CRF or electronic health record
 
+The majority of data on smoking outcomes is extracted from electronic health records that are routinely collected in the provision of healthcare. Some of the studies utilise specifically designed Case Report Forms (CRFs). The source of information on smoking status is not always reported.
 ``` {r data_source}
 
 #Source of data
@@ -372,54 +454,51 @@ table_1$data_source %>%
 
 ### Now about the smoking
 
-
-* **Smokers**
 ``` {r smokers}
 #Studies reporting smokers
 current_smok <- table_1 %>%
   filter(., current_smoker != 'NA')
-nrow(current_smok)
 
 ```
-* **Former smokers**
+* **Current smokers:** `r paste(nrow(current_smok))` studies report on the numbers of current smokers
+
 ``` {r former smokers}
 #Studies reporting former smokers
 former_smok <- table_1 %>%
   filter(., former_smoker != 'NA')
-nrow(former_smok)
 ```
-* **Never smokers**
+* **Former smokers:** `r paste(nrow(former_smok))` studies report on the numbers of former smokers
+
 ```{r never smokers}
 #Studies reporting never smokers
 never_smok <- table_1 %>%
   filter(., never_smoker != 'NA')
-nrow(never_smok)
 ```
-* **Current/former smokers**
+* **Never smokers:** `r paste(nrow(never_smok))` studies report on the numbers of never smokers
+
 ``` {r current former smokers}
 #Studies reporting current/former smokers
 current_former_smok <- table_1 %>%
   filter(., current_former_smoker != 'NA')
-nrow(current_former_smok)
 ```
-* **Missing, never/unknown and not stated**
+* **Current/former smokers:** `r paste(nrow(current_former_smok))` studies report on the numbers of current/former smokers without distinguishing between them, often termed as yes to a smoking history question.
+
 ``` {r missing/never/unknown/not stated}
 #Studies reporting missing data
 missing_smok <- table_1 %>%
   filter(., missing != 'NA')
-nrow(missing_smok)
+
 
 #Studies reporting never/unknown
 never_smok_unknown <- table_1 %>%
   filter(., never_smoker_unknown != 'NA')
-nrow(never_smok_unknown)
 
 #Studies with not stated
 smok_not_stated <- table_1 %>%
   filter(., not_stated != 'NA')
-nrow(smok_not_stated)
 ```
-* **Studies with complete smoking status**
+* **Missing, never/unknown and not stated:** studies report on the numbers of missing (`r paste(nrow(missing_smok))`), never/unknown (`r paste(nrow(never_smok_unknown))`) or not stated (`r paste(nrow(smok_not_stated))`) smoking history. This is often framed as absence of a smoking history.
+
 ``` {r complete}
 #Studies reporting current, former and never smoking status
 full_smoking_status <- table_1 %>%
@@ -441,12 +520,10 @@ b$`Lead author` <- to_upper_camel_case(b$`Lead author`, sep_out = ", ")
 b <- flextable(b) %>%
   set_table_properties(width = 1, layout = 'autofit') %>%
   set_caption(caption = 'Studies with complete smoking status data')
-b
-
-nrow(full_smoking_status)
 #These are the studies with data on current, former and never smokers
 ```
 
+* **Studies with complete smoking status:** `r paste(nrow(full_smoking_status))`
 ``` {r incomplete}
 #Studies reporting current or current/former and never smoking
 semi_full_smoking_status <- table_1 %>%
@@ -468,8 +545,10 @@ b <- flextable(b) %>%
   set_table_properties(width = 1, layout = 'autofit') %>%
   set_caption(caption = 'Studies with partially complete smoking status (current/former rather than current and former)')
 b
+```
+**Studies reporting partially incomplete smoking data:** `r paste(nrow(semi_full_smoking_status))`
 
-nrow(semi_full_smoking_status)
+``` {r}
 #Remaining studies
 incomplete_smoking_status <- table_1 %>%
   filter(!lead_author %in% full_smoking_status$lead_author) %>%
@@ -489,13 +568,16 @@ b <- incomplete_smoking_status %>%
 
 b$`Lead author` <- to_upper_camel_case(b$`Lead author`, sep_out = ", ")
 
+datatable(b)
+
 b <- flextable(b) %>%
   set_table_properties(width = 1, layout = 'autofit') %>%
   set_caption(caption = 'Studies with incomplete smoking status')
-b
-
-nrow(incomplete_smoking_status)
 ```
+
+
+**Studies missing key smoking data:** `r paste(nrow(incomplete_smoking_status))`
+
 
 ## Smoking prevalence by country {.tabset .tabset-fade .tabset-pills}
 ``` {r smoking_country}
@@ -513,12 +595,18 @@ country_prevalence_list <- table_1 %>%
 ```
 We have split the data into a list where each country can be analysed separately if required
 
-### Graph for smoking prevalence in the countries included
+#### Graph for smoking prevalence in the countries included
 
-#### Current smoking prevalence
+If this is the first time generating this report the bootstrapping script `olgas_script.R` needs to be run in order to generate the 95% confidence intervals around the point estimates from the included studies. Following the production of the confidence intervals the prevalence graphs are produced in the `smoking_plots.R` script. This uses data extracted on current and former smoking prevalence data from countries which have included studies in this review. If this version has previously been produced graphs will be loaded directly from a cache.
+
+**Current smoking prevalence**
+Two plots are produced. The first for current smoking prevalence, here the size of the dot corresponds to the size of the study. The studies are grouped by the country in which they were conducted. The solid line represents national current smoking prevalence obtained from national smoking survey estimates. The dashed line represents the weighted mean of the current smoking prevalence in the included studies.
+
 ![Country smoking prevalence](figure/figure_2a.png)
 
-#### Former smoker prevalence
+
+**Former smoker prevalence**
+This graph is for former smoking prevalence. The data is more sparse for this exposure and therefore several countries are missing for the analysis.
 ![Country former smoking prevalence](figure/figure_2b.png)
 
 ## Final results tables and meta-analyses {.tabset .tabset-fade .tabset-pills}
@@ -528,22 +616,30 @@ We have split the data into a list where each country can be analysed separately
 
 #Updating table 1
 table_1_word <- table_1 %>%
-  mutate(., current_percentage = current_smoker/total*100) %>%
-  mutate(., former_percentage = former_smoker/total*100) %>%
-  mutate(., current_former_percentage = current_former_smoker/total*100) %>%
-  mutate(., never_smoker_percentage = never_smoker/total*100) %>%
-  mutate(., never_smoker_unknown_percentage = never_smoker_unknown/total*100) %>%
-  mutate(., not_stated_percentage = not_stated/total*100) %>%
-  mutate(., missing_percentage = missing/total*100) %>%
+  mutate(., current_percentage = current_smoker/total*100,
+         former_percentage = former_smoker/total*100,
+         current_former_percentage = current_former_smoker/total*100,
+         never_smoker_percentage = never_smoker/total*100,
+         never_smoker_unknown_percentage = never_smoker_unknown/total*100,
+         not_stated_percentage = not_stated/total*100,
+         missing_percentage = missing/total*100) %>%
   select(lead_author, date_published, country, sample_size, median_age, iqr_lower, iqr_upper, mean_age, lower_range,
          upper_range, standard_deviation, female_sex_percent, current_percentage, former_percentage, current_former_percentage,
-         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage, study_id)
+         never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage, study_id) %>%
+  replace_na(., list(not_stated_percentage = 0, missing_percentage = 0)) %>%
+  mutate(., missing_percentage = not_stated_percentage + missing_percentage,
+         missing_percentage = formatC(missing_percentage, digits = 2, format = "f")) %>%
+  left_join(., table_6 %>%
+              rename(lead_author = 'author') %>%
+              select(lead_author, "Overall rating (poor, fair, good)"),
+            by = 'lead_author')
+           
 
 a <- data_study_general %>%
   select(study_id, study_setting)
 
 table_1_word <- left_join(table_1_word, a, by = 'study_id') %>%
-  select(1:4, 21, 5:20)
+  select(1:4, 22, 5:20, 21)
 table_1_word$date_published <- as.Date.character(table_1_word$date_published)
 write_rds(table_1_word, here::here('data_clean', 'table_1_word.rds'))
 
@@ -566,7 +662,7 @@ a$iqr_used <- coalesce(a$range_used, a$st_dev_used)
 a <- a %>%
   select(study_id, lead_author, date_published, country, sample_size, study_setting, median_mean, mean_used, iqr,
          female_sex_percent, current_percentage, current_former_percentage, never_smoker_percentage,
-         never_smoker_unknown_percentage, not_stated_percentage, missing_percentage) %>%
+         never_smoker_unknown_percentage, missing_percentage, "Overall rating (poor, fair, good)") %>%
   mutate(median_mean = paste(median_mean, mean_used, sep = ''),
          median_mean = na_if(median_mean, NA)) %>%
   select(-mean_used) %>%
@@ -584,7 +680,6 @@ a <- a %>%
          'Current/former smokers %' = current_former_percentage,
          'Never smokers %' = never_smoker_percentage,
          'Never/unknown smokers %' = never_smoker_unknown_percentage,
-         'Not stated %' = not_stated_percentage,
          'Missing %' = missing_percentage)
          
 a$`Lead author` <- to_upper_camel_case(a$`Lead author`, sep_out = ", ")
@@ -611,14 +706,24 @@ a$`Country` <- a$Country %>%
          'Uk' = 'UK')
 
 numeric_columns <- c('Median (IQR)', 'Female %', 'Current smoker %', 'Current/former smokers %',
-                     'Never smokers %', 'Never/unknown smokers %', 'Not stated %', 'Missing %')
+                     'Never smokers %', 'Never/unknown smokers %', 'Missing %')
+
+datatable(a) %>%
+  formatRound(
+    columns = c(4, 8:14),
+    digits = 2,
+    interval = 3,
+    mark = ",",
+    dec.mark = getOption("OutDec")
+)
+
+a 
 
 a <- flextable(a) %>%
     set_caption(caption = 'Characteristics of included studies') %>%
   colformat_num(col_keys = numeric_columns, digits = 2, na_str = '-', big.mark = ',') %>%
   colformat_num(col_keys = 'Sample size', digits = 0, na_str = '-', big.mark = ',') %>%
   set_table_properties(width = 1, layout = 'autofit')
-a
 
 save_as_docx(a, path = here('data_clean', 'Table_1.docx'))
 ```
@@ -740,10 +845,10 @@ a <- set_header_labels(a,
   colformat_char(na_str = '-')
 a
 
-nrow(table_2_word)
-
 save_as_docx(a, path = here('data_clean', 'Table_2.docx'))
 ```
+
+The number of studies reporting on infection by smoking status is: `r paste(nrow(table_2_word))`
 
 #### Smoking and testing meta-analysis
 ``` {r testing_meta}
@@ -813,7 +918,7 @@ numbers_in_analysis <- table_2_word %>%
                        select(lead_author, contributing_sample) %>%
   na.omit()
 ```
-The studies included in meta-analysis are `r knitr::combine_words(included_studies)`.
+The studies included in meta-analysis are `r knitr::combine_words(pull(included_studies, lead_author))`.
 
   * **Current versus never smokers**
 ```{r current_never}
@@ -851,7 +956,7 @@ null <- dev.off()
 a
 ```
 
-![Current versus never smokers](reports/figure/fig_3.png)
+![Current versus never smokers](figure/fig_3.png)
 
   * **Former versus never smokers**
 ```{r former_never}
@@ -890,7 +995,7 @@ a
 
 ```
 
-![Former versus never smokers](reports/figure/fig_4.png)
+![Former versus never smokers](figure/fig_4.png)
 
 ### Table 3: Smoking and COVID-19 hospitalisation
 ``` {r table_3}
@@ -1025,11 +1130,11 @@ a <- set_header_labels(a,
   set_table_properties(width = 1, layout = 'autofit')
 a
 
-nrow(table_3_word)
-
 save_as_docx(a, path = here('data_clean', 'Table_3.docx'))
 
 ```
+
+The number of studies reporting on hospitalisation by smoking status is: `r paste(nrow(table_3_word))`
 
 #### Smoking and hospitalisation meta-analysis
 
@@ -1040,7 +1145,7 @@ included_studies <- quality_table_3 %>%
   select(lead_author)
   
 ```
-The studies included in meta-analysis are `r paste(included_studies, sep = ', ')`.
+The studies included in meta-analysis are `r knitr::combine_words(pull(included_studies, lead_author))`.
 
 ``` {r}
 # Data --------------------------------------------------------------------
@@ -1102,7 +1207,7 @@ null <- dev.off()
 
 a
 ```
-![Current versus never smokers](reports/figure/fig_5.png)
+![Current versus never smokers](figure/fig_5.png)
 
 ```{r}
 # Former smoker hospitalisation -------------------------------------------
@@ -1147,7 +1252,7 @@ former_smoker_hospitalisation <- forest(event_rates_former,
 null <- dev.off()
 a
 ```
-![Former versus never smokers](reports/figure/fig_6.png)
+![Former versus never smokers](figure/fig_6.png)
 
 
 ### Table 4: Smoking and COVID-19 disease severity
@@ -1285,10 +1390,10 @@ a <- set_header_labels(a,
   set_table_properties(width = 1, layout = 'autofit')
 a
 
-nrow(table_4_word)
 save_as_docx(a, path = here('data_clean', 'Table_4.docx'))
 
 ```
+The number of studies reporting on hospitalisation by smoking status is: `r paste(nrow(table_4_word))`
 
 #### Smoking and severity meta-analysis
 ```{r current_never severity, echo = F}
@@ -1297,7 +1402,7 @@ included_studies <- quality_table_4 %>%
   filter(overall_quality == 'fair') %>%
   select(lead_author)
 ```
-The studies included in meta-analysis are `r paste(included_studies, sep = ', ')`.
+The studies included in meta-analysis are `r knitr::combine_words(pull(included_studies, lead_author))`.
 
 ``` {r}
 # Data --------------------------------------------------------------------
@@ -1356,7 +1461,7 @@ null <- dev.off()
 
 event_rates_smoker
 ```
-![Current versus never smokers](reports/figure/fig_7.png)
+![Current versus never smokers](figure/fig_7.png)
 
 ```{r}
 # Former smoker hospitalisation -------------------------------------------
@@ -1401,7 +1506,7 @@ null <- dev.off()
 event_rates_former
 
 ```
-![Former versus never smokers](reports/figure/fig_8.png)
+![Former versus never smokers](figure/fig_8.png)
 
 ### Table 5: Smoking and COVID-19 mortality
 
@@ -1541,11 +1646,9 @@ a <- set_header_labels(a,
   set_table_properties(width = 1, layout = 'autofit')
 a
 
-nrow(table_5_word)
-
 save_as_docx(a, path = here('data_clean', 'Table_5.docx'))
-
 ```
+The number of studies reporting on hospitalisation by smoking status is: `r paste(nrow(table_5_word))`
 
 #### Smoking and COVID-19 mortality meta-analysis
 
@@ -1612,7 +1715,7 @@ null <- dev.off()
 
 event_rates_smoker
 ```
-![Current versus never smokers](reports/figure/fig_9.png)
+![Current versus never smokers](figure/fig_9.png)
 
 ```{r}
 # Former smoker mortality ------------------------------------------
@@ -1657,7 +1760,7 @@ event_rates_former
 
 ```
 
-![Former versus never smokers](reports/figure/fig_10.png)
+![Former versus never smokers](figure/fig_10.png)
 
 ### Study quality assessment
 ``` {r table_6}
@@ -1667,24 +1770,27 @@ table_6_word <- table_6 %>%
 
 a <- table_6_word %>%
   rename("Lead Author" = 1,
-         "Question 1." = 2,
-         "Question 2." = 3,
-         "Question 3." = 4,
-         "Question 4." = 5,
-         "Question 5." = 6,
-         "Question 6." = 7,
-         "Question 7." = 8,
-         "Question 8." = 9,
-         "Question 9." = 10,
-         "Question 10." = 11,
-         "Question 11." = 12,
-         "Question 12." = 13,
-         "Question 13." = 14,
-         "Question 14." = 15,
+         "1." = 2,
+         "2." = 3,
+         "3." = 4,
+         "4." = 5,
+         "5." = 6,
+         "6." = 7,
+         "7." = 8,
+         "8." = 9,
+         "9." = 10,
+         "10." = 11,
+         "11." = 12,
+         "12." = 13,
+         "13." = 14,
+         "14." = 15,
          "Missing data" = 17,
          "Overall rating (Poor, Fair, Good)" = 16) %>%
   mutate(`Missing data` = if_else(is.na(`Missing data`), 0, `Missing data`)) %>%
   select(1:15, 17, 16)
+
+fair <- nrow(filter(a, a$`Overall rating (Poor, Fair, Good)` == "Fair" ))
+poor <- nrow(filter(a, a$`Overall rating (Poor, Fair, Good)` == "Poor" ))
 
 a$`Lead Author` <- to_upper_camel_case(a$`Lead Author`, sep_out = ", ")
 a$`Lead Author`  <- a$`Lead Author`  %>%
@@ -1705,21 +1811,17 @@ a$`Lead Author`  <- a$`Lead Author`  %>%
 a <- a %>%
   mutate("Missing data" = formatC(a$`Missing data`, digits = 2, format = "f"))
 a$`Missing data` <- paste0(a$`Missing data`, "%")
-         
-         
-         
-a <- flextable(a) %>%
+
+b <- flextable(a) %>%
     set_caption(caption = 'National Institutes of Health’s Quality Assessment Tool for Observational Cohort and Cross-Sectional Studies') %>%
   colformat_char(na_str = '-') %>%
+  add_header_row(top = TRUE, values = c("","Question Number", "" ), colwidths = c(1, 14, 2)) %>%
   theme_booktabs() %>%
   fix_border_issues() %>%
   set_table_properties(width = 1, layout = 'autofit')
-a
 
-a <- table_6_word %>%
-  filter(`Overall rating (poor, fair, good)` == "Fair")
+save_as_docx(b, path = here('data_clean', 'Table_6.docx'))
 
-nrow(a)
-nrow(table_6_word)-nrow(a)
-
+datatable(a)
 ```
+The number of **Fair** quality studies are `r paste(fair)` with the number of **Poor** quality studies equal to `r paste(poor)`
