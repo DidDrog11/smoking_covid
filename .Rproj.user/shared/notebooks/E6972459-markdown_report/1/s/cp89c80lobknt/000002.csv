@@ -1,0 +1,3 @@
+"0","#Studies reporting never smokers"
+"0","never_smok <- table_1 %>%"
+"0","  filter(., never_smoker != 'NA')"

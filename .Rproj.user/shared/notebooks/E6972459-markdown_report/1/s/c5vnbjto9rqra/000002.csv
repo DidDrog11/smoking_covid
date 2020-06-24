@@ -1,0 +1,3 @@
+"0","#Studies reporting current/former smokers"
+"0","current_former_smok <- table_1 %>%"
+"0","  filter(., current_former_smoker != 'NA')"

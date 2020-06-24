@@ -1,0 +1,3 @@
+"0","datatable(data_study_general[1:4] %>%"
+"0","            mutate(`date_published_format(2020-05-12)` = as.Date(data_study_general$`date_published_format(2020-05-12)`)),"
+"0","          colnames = c(""Lead author"" = 2, ""Date published"" = 3, ""Source"" = 4, ""DOI"" = 5))"
