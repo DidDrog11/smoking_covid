@@ -1,4 +1,0 @@
-"0","datatable(a)"
-"2","Error in datatable(a) : 
-  'data' must be either a matrix or a data frame, and cannot be flextable (you may need to coerce it to matrix or data frame)
-"

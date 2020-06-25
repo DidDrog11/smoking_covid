@@ -64,7 +64,7 @@ We import the data from the dataset that is available in the "data for analysis"
 In future versions we may open a tab in the Google sheet to allow people to submit relevant papers for us to incorporate in our review.
 
 ```{r raw_data, cache=T}
-sheets_id <- as_sheets_id("https://docs.google.com/spreadsheets/d/1g4I0azaWD5KpsAqrn_IsjIin0mKDYvzSD16qQiXhUWI/edit?usp=sharing")
+sheets_id <- as_sheets_id("https://docs.google.com/spreadsheets/d/10TLHYACXrkFUmGaoKCiRes1NMckH3RVXnBJ-4kUC-qY/edit?usp=sharing")
 search_details <- read_sheet(sheets_id, range = 'article_screening')
 data_study_general <- read_sheet(sheets_id, range =  'general_details')
 table_1 <- read_sheet(sheets_id, sheet = 'pop_descriptives')
@@ -72,8 +72,7 @@ table_2 <-  read_sheet(sheets_id, sheet = 'testing')
 table_3 <-  read_sheet(sheets_id, sheet = 'hospitalisation')
 table_4 <-  read_sheet(sheets_id, sheet = 'severity')
 table_5 <-  read_sheet(sheets_id, sheet = 'mortality')
-table_6 <-  read_sheet(sheets_id, sheet = 'quality_appraisal')
-
+table_6 <-  read_sheet(sheets_id, sheet = 'updated_quality_appraisal')
 ```
 
 The data is downloaded from the sheet and split into dataframes to represent the current sheets and analysis.
@@ -205,7 +204,7 @@ table_5 <- table_5 %>%
   write_rds(here::here('data_clean', 'table_5.rds'))
 
 
-protect_columns_2 <- !names(table_6) %in% 'Author'
+protect_columns_2 <- !names(table_6) %in% 'lead_author'
 
 table_6 <-  table_6 %>%
   clean_data(protect = protect_columns_2) %>%
@@ -213,10 +212,9 @@ table_6 <-  table_6 %>%
               select(lead_author,
                      not_stated,
                      missing,
-                     total) %>%
-              rename('author' = lead_author),
-            by = 'author') %>%
-  mutate(missingness = rowSums(.[17:18], na.rm = T),
+                     total),
+                          by = 'lead_author') %>%
+  mutate(missingness = rowSums(.[8:9], na.rm = T),
          missingness_percentage = (missingness/total)*100) %>% ## Later we want to assess the amount of missingness for each study as it would impact the inclusion of a study into the relevant meta-analyses
   select(-c(not_stated, missing, total, missingness)) %>%
   write_rds(here::here('data_clean', 'table_6.rds'))
@@ -267,7 +265,7 @@ As we don't want to remove studies from the dataset despite them no longer being
 ``` {r excluding_studies}
 exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated')
 
-exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra', 'hopkinson')
+exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated')
 ```
 We have excluded from the analysis the following studies: `r knitr::combine_words(exclude_from_analysis)`
 
@@ -308,7 +306,7 @@ table_5 <- table_5 %>%
   filter(!(lead_author %in% exclude_from_analysis))
 
 table_6 <- table_6 %>%
-  filter(!(author %in% exclude_from_qa))
+  filter(!(lead_author %in% exclude_from_qa))
 
 a <- data_study_general %>%
   select(lead_author, date_published, source, study_id) %>%
@@ -370,6 +368,7 @@ As the pandemic continues studies are being reported from increasing numbers of 
 ``` {r countries}
 library('ggmap')
 
+
 #Countries
 country <- table_1$country %>%
   to_upper_camel_case() %>%
@@ -423,6 +422,9 @@ ggplot(country, aes(x = reorder(Country, desc(-Number)), y = Number))+
   labs(title = 'Countries where studies were performed',
        y = 'Number of studies',
        x = 'Country')
+
+country <- country %>%
+  select(-c(lon, lat))
 
 a <- flextable(country) %>%
   set_table_properties(width = 0.5, layout = 'autofit')
@@ -648,7 +650,6 @@ This graph is for former smoking prevalence. The data is more sparse for this ex
 
 ### Table 1: Included studies
 ``` {r table_1}
-
 #Updating table 1
 table_1_word <- table_1 %>%
   mutate(., current_percentage = current_smoker/total*100,
@@ -663,18 +664,52 @@ table_1_word <- table_1 %>%
          never_smoker_percentage, never_smoker_unknown_percentage, not_stated_percentage, missing_percentage, study_id) %>%
   replace_na(., list(not_stated_percentage = 0, missing_percentage = 0)) %>%
   mutate(., missing_percentage = not_stated_percentage + missing_percentage,
-         missing_percentage = formatC(missing_percentage, digits = 2, format = "f")) %>%
-  left_join(., table_6 %>%
-              rename(lead_author = 'author') %>%
-              select(lead_author, "Overall rating (poor, fair, good)"),
-            by = 'lead_author')
-           
+         missing_percentage = formatC(missing_percentage, digits = 2, format = "f"))
+
+#Smoking completeness
+smoking_status <- as_tibble(full_smoking_status$lead_author) %>%
+  rename(lead_author = 1) %>%
+  mutate(complete_status = c("Yes")) %>%
+  bind_rows(., semi_full_smoking_status %>%
+              select(lead_author)) %>%
+  bind_rows(., incomplete_smoking_status %>%
+              select(lead_author)) %>%
+  distinct() %>%
+  mutate(complete_status = replace_na(complete_status, "No"))
+
+#Data missingness
+missingness <- table_6 %>%
+  select(lead_author) %>%
+  left_join(., table_1_word %>%
+              select(lead_author, missing_percentage)) %>%
+  mutate(missing_percentage = as.numeric(missing_percentage),
+         low_missingness = ifelse(missing_percentage >= 20, "No", "Yes"))
+
+#Defining poor quality
+poor_quality <- missingness %>%
+  select(-missing_percentage) %>%
+  left_join(., smoking_status, by = "lead_author") %>%
+  mutate(study_quality = ifelse(low_missingness == "No" | complete_status == "No", "Poor", "Not_poor"))
+
+good_quality <- table_6 %>%
+  left_join(., poor_quality, by = "lead_author") %>%
+  select(lead_author, study_quality, biochemical_verification, random_representative_sample) %>%
+  mutate(study_quality_final = ifelse(study_quality == "Not_poor" & (biochemical_verification == "Yes" | random_representative_sample == "Yes"), "good",
+                                      ifelse(study_quality == "Poor", "poor", "fair")))
+
+quality_rating <- good_quality %>%
+  select(lead_author, study_quality_final) %>%
+  rename("overall_quality" = study_quality_final)
+
+table_1_word <- left_join(table_1_word, good_quality %>%
+                            select(lead_author, study_quality_final))
+
 
 a <- data_study_general %>%
   select(study_id, study_setting)
 
 table_1_word <- left_join(table_1_word, a, by = 'study_id') %>%
-  select(1:4, 22, 5:20, 21)
+  select(1:4, 22, 5:19, 21, 20)
 table_1_word$date_published <- as.Date.character(table_1_word$date_published)
 write_rds(table_1_word, here::here('data_clean', 'table_1_word.rds'))
 
@@ -688,19 +723,17 @@ a <- table_1_word %>%
          iqr = ifelse(is.na(iqr_lower), NA, paste(iqr_lower, iqr_upper, sep = '-')),
          range_combined = paste(lower_range, upper_range, sep = '-'),
          range_combined = na_if(range_combined, 'NA-NA'),
-         standard_deviation = as.numeric(standard_deviation))
+         standard_deviation = as.numeric(standard_deviation),
          st_dev = paste((as.integer(median_mean-standard_deviation)), as.integer((median_mean+standard_deviation)), sep = '-'),
          st_dev = na_if(st_dev, 'NA-NA'))
-```
 
-``` {r}
 a$iqr <- coalesce(a$iqr, a$range_combined, a$st_dev)
 a$iqr_used <- coalesce(a$range_used, a$st_dev_used)
 
 a <- a %>%
   select(study_id, lead_author, date_published, country, sample_size, study_setting, median_mean, mean_used, iqr,
          female_sex_percent, current_percentage, current_former_percentage, never_smoker_percentage,
-         never_smoker_unknown_percentage, missing_percentage, "Overall rating (poor, fair, good)") %>%
+         never_smoker_unknown_percentage, missing_percentage, study_quality_final) %>%
   mutate(median_mean = paste(median_mean, mean_used, sep = ''),
          median_mean = na_if(median_mean, NA)) %>%
   select(-mean_used) %>%
@@ -718,24 +751,61 @@ a <- a %>%
          'Current/former smokers %' = current_former_percentage,
          'Never smokers %' = never_smoker_percentage,
          'Never/unknown smokers %' = never_smoker_unknown_percentage,
-         'Missing %' = missing_percentage)
+         'Missing %' = missing_percentage,
+         "Study quality" = study_quality_final)
          
 a$`Lead author` <- to_upper_camel_case(a$`Lead author`, sep_out = ", ")
-a$`Lead author` <- a$`Lead author` %>%
-  recode('Chow, Us, Cdc' = 'Chow (US CDC)',
-         "Gold, Us, Cdc" = "Gold (US CDC)",
-         "Miyara, Updated" = "Miyara",
-         "De, La, Rica" = "de la Rica",
-         "Opensafely, Collaborative" = "The Opensafely Collaborative",
-         "Bello, Chavolla" = "Bello-Chavolla",
-         "Carrillo, Vega" = "Carillo-Vega",
-         "De, Lusignan" = "de Lusignan",
-         "Mejia, Vilet" = "Mejia-Vilet",
-         "Heili, Frades" = "Heili-Frades",
-         "Vaquero, Roncero" = "Vaquero-Roncero",
-         "Al, Hindawi" = "Al-Hindawi",
-         "Del, Valle" = "del Valle",
-         "Soto, Mota" = "Soto-Mota")
+
+cleaned_names <- c('Chow, Us, Cdc',
+                   "Gold, Us, Cdc",
+                   "Miyara, Updated",
+                   "De, La, Rica",
+                   "Opensafely, Collaborative",
+                   "Bello, Chavolla",
+                   "Carrillo, Vega",
+                   "De, Lusignan",
+                   "Mejia, Vilet",
+                   "Heili, Frades",
+                   "Vaquero, Roncero",
+                   "Al, Hindawi",
+                   "Del, Valle",
+                   "Soto, Mota",
+                   "Eugen, Olsen",
+                   "Martinez, Portilla",
+                   "Raisi, Estabragh",
+                   "Miyara, Medrxiv",
+                   "Hernandez, Gardano",
+                   "Siso, Almirall",
+                   "Martinez, Jiminez",
+                   "eugen_olsen")
+correct_names <- c('Chow (US CDC)',
+                   "Gold (US CDC)",
+                   "Miyara",
+                   "de la Rica",
+                   "The Opensafely Collaborative",
+                   "Bello-Chavolla",
+                   "Carillo-Vega",
+                   "de Lusignan",
+                   "Mejia-Vilet",
+                   "Heili-Frades",
+                   "Vaquero-Roncero",
+                   "Al-Hindawi",
+                   "del Valle",
+                   "Soto-Mota",
+                   "Eugen-Olsen",
+                   "Martinez-Portilla",
+                   "Raisi-Estabragh",
+                   "Miyara (medRxiv)",
+                   "Hernandez-Gardano",
+                   "Siso-Almirall",
+                   "Martinez-Jiminez",
+                   "Eugen-Olsen")
+
+author_list <- plyr::mapvalues(a$`Lead author`,
+                               from = cleaned_names,
+                               to = correct_names)
+
+a$`Lead author` <- author_list
 
 a$`Study setting` <-to_title_case(a$`Study setting`, sep_out = " ")
 a$`Country` <-to_title_case(a$`Country`, sep_out = " ")
@@ -759,7 +829,7 @@ a
 
 a <- flextable(a) %>%
     set_caption(caption = 'Characteristics of included studies') %>%
-  colformat_num(col_keys = numeric_columns, digits = 2, na_str = '-', big.mark = ',') %>%
+  colformat_num(col_keys = numeric_columns, digits = 1, na_str = '-', big.mark = ',') %>%
   colformat_num(col_keys = 'Sample size', digits = 0, na_str = '-', big.mark = ',') %>%
   set_table_properties(width = 1, layout = 'autofit')
 
@@ -768,11 +838,6 @@ save_as_docx(a, path = here('data_clean', 'Table_1.docx'))
 
 ### Table 2: Smoking and COVID-19 diagnostic testing
 ``` {r table_2}
-
-quality_rating <- table_6 %>%
-  select(author, 16:17) %>%
-  rename('lead_author' = author, 'overall_rating' = 2, 'missingness' = 3) %>%
-  clean_data()
 
 #Table 2
 table_2_word <-  table_2 %>%
@@ -793,10 +858,7 @@ table_2_word <-  table_2 %>%
   write_rds(here::here('data_clean', 'table_2_word.rds'))
 
 quality_table_2 <- table_2_word %>%
-  left_join(., quality_rating, by = 'lead_author') %>%
-  select(lead_author, overall_rating, missingness) %>%
-  mutate(overall_quality = ifelse(overall_rating != 'poor' & missingness < 20, 'fair', 'poor')) %>%
-  select(lead_author, overall_quality)
+  left_join(., quality_rating, by = 'lead_author')
 
 a <- table_2_word %>%
   filter(contributing_sample >= 1) %>%
@@ -906,28 +968,37 @@ meta <- tibble('author' = table_2$lead_author,
                'negative_former_smoker' = table_2$negative_former_smoker,
                'positive_former_smoker' = table_2$positive_former_smoker) %>%
         filter(author %in% included_studies$lead_author)
+meta$author <- to_upper_camel_case(meta$author, sep_out = ", ")
+meta$author <- plyr::mapvalues(meta$author,
+                               from = cleaned_names,
+                               to = correct_names)
 
-meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
-                      'cho' = 'Cho',
-                      'kolin' = 'Kolin',
-                      'de_lusignan' = 'de Lusignan',
-                      'parrotta' = 'Parrotta',
-                      'israel' = 'Israel')
+testing_rr <- list()
+testing_rr[[1]] <- RR_testing('Rentsch', 'current')
+testing_rr[[2]] <- RR_testing('Rentsch', 'former')
+testing_rr[[3]] <- RR_testing('Cho', 'current')
+testing_rr[[4]] <- RR_testing('Cho', 'former')
+testing_rr[[5]] <- RR_testing('Kolin', 'current')
+testing_rr[[6]] <- RR_testing('Kolin', 'former')
+testing_rr[[7]] <- RR_testing('de Lusignan', 'current')
+testing_rr[[8]] <- RR_testing('de Lusignan', 'former')
+testing_rr[[9]] <- RR_testing('Parrotta', 'current')
+testing_rr[[10]] <- RR_testing('Parrotta', 'former')
+testing_rr[[11]] <- RR_testing('Israel', 'current')
+testing_rr[[12]] <- RR_testing('Israel', 'former')
+testing_rr[[13]] <- RR_testing('Eugen-Olsen', 'current')
+testing_rr[[14]] <- RR_testing('Eugen-Olsen', 'former')
+testing_rr[[15]] <- RR_testing('Houlihan', 'current')
+testing_rr[[16]] <- RR_testing('Houlihan', 'former')
+testing_rr[[17]] <- RR_testing('Woolford', 'current')
+testing_rr[[18]] <- RR_testing('Woolford', 'former')
+testing_rr[[19]] <- RR_testing('Govind', 'current')
+testing_rr[[19]] <- RR_testing('Govind', 'former')
+testing_rr[[20]] <- RR_testing('Gu', 'current')
+testing_rr[[20]] <- RR_testing('Gu', 'former')
 
-a <- RR_testing('Rentsch', 'current')
-b <- RR_testing('Rentsch', 'former')
-c <- RR_testing('Cho', 'current')
-d <- RR_testing('Cho', 'former')
-e <- RR_testing('Kolin', 'current')
-f <- RR_testing('Kolin', 'former')
-g <- RR_testing('de Lusignan', 'current')
-h <- RR_testing('de Lusignan', 'former')
-i <- RR_testing('Parrotta', 'current')
-j <- RR_testing('Parrotta', 'former')
-k <- RR_testing('Israel', 'current')
-l <- RR_testing('Israel', 'former')
 
-data <- list(a,b,c,d,e,f,g,h,i,j,k,l)
+data <- testing_rr
 k <- do.call(rbind.data.frame, data)
 
 #SEs for Niedzwiedz et al. 2020
@@ -949,7 +1020,7 @@ k <- k %>%
 
 numbers_in_analysis <- table_2_word %>%
         left_join(., quality_rating, by = 'lead_author') %>%
-        filter(., overall_rating != 'poor') %>%
+        filter(., overall_quality != 'poor') %>%
         add_row(lead_author = 'niedzwiedz', contributing_sample = 1474) %>%
         replace_na(list(negative_not_stated = 0, positive_not_stated = 0)) %>%
         mutate(contributing_sample = (contributing_sample - (negative_not_stated+positive_not_stated))) %>%
@@ -971,14 +1042,17 @@ a<-metagen(current_never_meta$log_RR,
                        "Kolin, = 1462", 
                        "de Lusignan, n = 3291", 
                        "Parrotta, n = 74",
-                       "Israel, n = 24087 ", 
+                       "Israel, n = 24087 ",
+                       "Eugen-Olsen, n = 407",
+                       "Houlihan, n = 200",
+                       "Woolford, n = 4510",
                        "Niedzwiedz, n = 1474"),
            sm="RR",
            comb.fixed = F, comb.random = T)
 
 png(here::here('reports', 'figure','fig_3.png'), width=1024, height=546, res=120)
 forest(a,
-       xlim = c(0.3, 2),
+       xlim = c(0.1, 2),
        sortvar = a$TE,
        rightlabs = c('RR', '95% CI', 'Weight'),
        leftlabs = c('Author', 'logRR', 'SE'),
@@ -1011,6 +1085,11 @@ a<-metagen(current_never_meta$log_RR,
                        "de Lusignan, n = 3291", 
                        "Parrotta, n = 74",
                        "Israel, n = 24087 ", 
+                       "Eugen-Olsen, n = 407",
+                       "Houlihan, n = 200",
+                       "Woolford, n = 4510",
+                       "Goving, n = 6309",
+                       "Gu, n = 5698",
                        "Niedzwiedz, n = 1474"),
            sm="RR", comb.fixed = F, comb.random = T)
 
@@ -1069,8 +1148,6 @@ table_3_word <- table_3 %>%
 
 quality_table_3 <- table_3_word %>%
   left_join(., quality_rating, by = 'lead_author') %>%
-  select(lead_author, overall_rating, missingness) %>%
-  mutate(overall_quality = ifelse(overall_rating != 'poor' & missingness < 20, 'fair', 'poor')) %>%
   select(lead_author, overall_quality)
 
 a <- table_3_word %>%
@@ -1133,11 +1210,9 @@ a <- table_3_word %>%
 
          
 a$Author <- to_upper_camel_case(a$Author, sep_out = ", ")
-a$Author  <- a$Author  %>%
-  recode("Chow, Us, Cdc" = "Chow (US CDC)",
-         "Miyara, Updated" = "Miyara",
-         "Carrillo, Vega" = "Carrillo-Vega",
-         "Heili, Frades" = "Heili-Frades")
+a$Author <- plyr::mapvalues(a$Author,
+                               from = cleaned_names,
+                               to = correct_names)
 
 numeric_columns <- 'Population'
 
@@ -1195,13 +1270,11 @@ meta <- tibble('author' = table_3$lead_author,
                'community_former_smoker' = table_3$community_former_smoker,
                'hospitalised_former_smoker' = table_3$hospitalised_former_smoker) %>%
   filter(author %in% included_studies$lead_author)
-  
-meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
-                      'argenziano' = 'Argenziano',
-                      'miyara_updated' = 'Miyara',
-                      'yanover' = 'Yanover',
-                      'hamer' = 'Hamer',
-                      'heili_frades' = 'Heili-Frades')
+
+meta$author <- to_upper_camel_case(meta$author, sep_out = ", ")
+meta$author <- plyr::mapvalues(meta$author,
+                               from = cleaned_names,
+                               to = correct_names)  
 
 # Current smoker hospitalisation ------------------------------------------
 event_rates_smoker <- meta %>%
@@ -1230,7 +1303,7 @@ event_rates_smoker <- metabin(Ee,
 png(here::here('reports', 'figure', 'fig_5.png'), width=1480, height=546, res=120)
 current_smoker_hospitalisation <- forest(event_rates_smoker,
                                 sortvar = Author,
-                                xlim = c(0.5, 3),
+                                xlim = c(0.3, 3),
                                 rightlabs = c('RR', '95% CI', 'Weight'),
                                 leftlabs = c('Author', 'logRR', 'SE'),
                                 lab.e = 'Current smoker',
@@ -1328,8 +1401,6 @@ table_4_word <- table_4 %>%
 
 quality_table_4 <- table_4_word %>%
   left_join(., quality_rating, by = 'lead_author') %>%
-  select(lead_author, overall_rating, missingness) %>%
-  mutate(overall_quality = ifelse(overall_rating != 'poor' & missingness < 20, 'fair', 'poor')) %>%
   select(lead_author, overall_quality)
 
 a <- table_4_word %>%
@@ -1394,11 +1465,9 @@ a <- table_4_word %>%
 
          
 a$Author <- to_upper_camel_case(a$Author, sep_out = ", ")
-a$Author  <- a$Author  %>%
-  recode("De, La, Rica"  = "de la Rica",
-         "Mejia, Vilet" = "Mejia-Vilet",
-         "Vaquero, Roncero" = "Vaquero-Roncero")
-
+a$Author <- plyr::mapvalues(a$Author,
+                               from = cleaned_names,
+                               to = correct_names)  
 numeric_columns <- 'Population'
 
 a <- flextable(a) %>%
@@ -1453,11 +1522,10 @@ meta <- tibble('author' = table_4$lead_author,
                'severe_former_smoker' = table_4$severe_disease_former_smoker) %>%
   filter(author %in% included_studies$lead_author)
 
-meta$author <- recode(meta$author, 'rentsch' = 'Rentsch',
-                      'guan_ni' = 'Guan, Ni',
-                      'hadjadj' = 'Hadjadj',
-                      "feuth" = "Feuth")
-
+meta$author <- to_upper_camel_case(meta$author, sep_out = ", ")
+meta$author <- plyr::mapvalues(meta$author,
+                               from = cleaned_names,
+                               to = correct_names)  
 
 # Current smoker severity ------------------------------------------
 event_rates_smoker <- meta %>%
@@ -1580,8 +1648,6 @@ table_5_word <- table_5 %>%
 
 quality_table_5 <- table_5_word %>%
   left_join(., quality_rating, by = 'lead_author') %>%
-  select(lead_author, overall_rating, missingness) %>%
-  mutate(overall_quality = ifelse(overall_rating != 'poor' & missingness < 20, 'fair', 'poor')) %>%
   select(lead_author, overall_quality)
 
 a <- table_5_word %>%
@@ -1649,11 +1715,9 @@ a <- table_5_word %>%
 
          
 a$Author <- to_upper_camel_case(a$Author, sep_out = ", ")
-a$Author  <- a$Author  %>%
-  recode("Carrillo, Vega"  = "Carillo-Vega",
-         "Heili, Frades" = "Heili-Frades",
-         "Al, Hindawi" = "Al-Hindawi",
-         "Soto, Mota" = "Soto-Mota")
+a$Author <- plyr::mapvalues(a$Author,
+                               from = cleaned_names,
+                               to = correct_names)  
 
 numeric_columns <- 'Population'
 
@@ -1709,8 +1773,10 @@ meta <- tibble('author' = table_5$lead_author,
                'death_former_smoker' = table_5$death_former_smokers) %>%
   filter(author %in% included_studies$lead_author)
 
-meta$author <- recode(meta$author, 'gaibazzi' = 'Gaibazzi',
-                      'al_hindawi' = 'Al-Hindawi')
+meta$author <- to_upper_camel_case(meta$author, sep_out = ", ")
+meta$author <- plyr::mapvalues(meta$author,
+                               from = cleaned_names,
+                               to = correct_names)  
 
 
 # Current smoker mortality ------------------------------------------
@@ -1803,63 +1869,7 @@ event_rates_former
 ### Study quality assessment
 ``` {r table_6}
 #Table 6
-table_6_word <- table_6 %>%
-  write_rds(here::here('data_clean', 'table_6_word.rds'))
-
-a <- table_6_word %>%
-  rename("Lead Author" = 1,
-         "1." = 2,
-         "2." = 3,
-         "3." = 4,
-         "4." = 5,
-         "5." = 6,
-         "6." = 7,
-         "7." = 8,
-         "8." = 9,
-         "9." = 10,
-         "10." = 11,
-         "11." = 12,
-         "12." = 13,
-         "13." = 14,
-         "14." = 15,
-         "Missing data" = 17,
-         "Overall rating (Poor, Fair, Good)" = 16) %>%
-  mutate(`Missing data` = if_else(is.na(`Missing data`), 0, `Missing data`)) %>%
-  select(1:15, 17, 16)
-
-fair <- nrow(filter(a, a$`Overall rating (Poor, Fair, Good)` == "Fair" ))
-poor <- nrow(filter(a, a$`Overall rating (Poor, Fair, Good)` == "Poor" ))
-
-a$`Lead Author` <- to_upper_camel_case(a$`Lead Author`, sep_out = ", ")
-a$`Lead Author`  <- a$`Lead Author`  %>%
-  recode("Carrillo, Vega"  = "Carillo-Vega",
-         "Heili, Frades" = "Heili-Frades",
-         "Al, Hindawi" = "Al-Hindawi",
-         "Soto, Mota" = "Soto-Mota",
-         "Chow, Us, Cdc" = "Chow (US CDC)",
-         "Gold, Us, Cdc" = "Gold (US CDC)",
-         "Miyara, Updated" = "Miyars",
-         "De, La, Rica" = "de la Rica",
-         "Opensafely, Collaborative" = "The Opensafely Collaborative",
-         "Bello, Chavolla" = "Bello-Chavolla",
-         "De, Lusignan" = "de Lusignan",
-         "Mejia, Vilet" = "Megia-Vilet",
-         "Vaquero, Roncero" = "Vaquero-Roncer",
-         "Del, Valle" = "del Valle")
-a <- a %>%
-  mutate("Missing data" = formatC(a$`Missing data`, digits = 2, format = "f"))
-a$`Missing data` <- paste0(a$`Missing data`, "%")
-
-b <- flextable(a) %>%
-    set_caption(caption = 'National Institutes of Health’s Quality Assessment Tool for Observational Cohort and Cross-Sectional Studies') %>%
-  colformat_char(na_str = '-') %>%
-  add_header_row(top = TRUE, values = c("","Question Number", "" ), colwidths = c(1, 14, 2)) %>%
-  theme_booktabs() %>%
-  fix_border_issues() %>%
-  set_table_properties(width = 1, layout = 'autofit')
-
-save_as_docx(b, path = here('data_clean', 'Table_6.docx'))
-
-datatable(a)
+fair <- nrow(filter(quality_rating, quality_rating$overall_quality == "fair" ))
+poor <- nrow(filter(quality_rating, quality_rating$overall_quality == "poor" ))
 ```
 The number of **Fair** quality studies are `r paste(fair)` with the number of **Poor** quality studies equal to `r paste(poor)`

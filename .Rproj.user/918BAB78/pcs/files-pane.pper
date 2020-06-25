@@ -1,8 +1,8 @@
 {
-    "path" : "C:/Users/ucbtds4/Google Drive/PhD/COVID-19/Smoking and COVID data/smoking_covid/smoking_covid/reports",
+    "path" : "C:/Users/ucbtds4/R Repositories/smoking_covid/reports",
     "sortOrder" : [
         {
-            "ascending" : true,
+            "ascending" : false,
             "columnIndex" : 2
         }
     ]

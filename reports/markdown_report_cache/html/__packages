@@ -1,4 +1,10 @@
 base
+methods
+datasets
+utils
+grDevices
+graphics
+stats
 tidyverse
 ggplot2
 tibble
@@ -20,3 +26,4 @@ knitr
 kableExtra
 here
 flextable
+DT

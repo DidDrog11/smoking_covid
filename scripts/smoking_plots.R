@@ -28,35 +28,41 @@ country_colour <- country_colour %>%
 sorted_data <- data %>%
   ungroup() %>%
   mutate(country = fct_reorder(country, -n), ## sorting countries by number of studies from each country
-         smoking = fct_relevel(smoking, "former_smoking_p", after = Inf)) %>%
+         smoking = fct_relevel(smoking, "former_smoking_p", after = Inf),
+         study_setting = recode(study_setting, "quarantine_centre" = "community"),
+         study_setting = forcats::fct_explicit_na(study_setting)) %>%
   group_by(smoking, country) %>%
   add_count(name = "prevalence_country") %>%
-  group_by(smoking, country, study) %>%
+  mutate(running_count = row_number()) %>%
+  group_by(smoking, country, study, study_setting) %>%
   mutate(mean = ifelse(is.na(weightedMean(prevalence, w = true_sample, idxs = c(smoking, country, study))), mean(prevalence),
                          weightedMean(prevalence, w = true_sample, idxs = c(smoking, country, study))),
-         running_count = row_number(),
-         prevalence_country = prevalence_country - 1) 
+         prevalence_country = prevalence_country - 1)
 
 sorted_data$running_count <- as_factor(sorted_data$running_count)  
 
 current_sorted_data <- sorted_data %>%
   filter(., smoking == "current_smoking_p") %>%
-  arrange(-prevalence, .by_group = T)
+  arrange(-prevalence, .by_group = T) %>%
+  ungroup() %>%
+  group_by(country) %>%
+  filter(!country %in% c("Brazil", "India", "Portugal", "Turkey"))
 
-a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_count, y = prevalence, colour = country)) +
-  scale_colour_manual(values = country_colour) +
-  geom_point(aes(size = true_sample)) + 
-  scale_size_continuous(trans = "log10") +
-  geom_linerange(aes(ymin = lower_ci, ymax =upper_ci)) +
+a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_count, y = prevalence, colour = country, linetype = study_setting)) +
+  scale_colour_manual(values = country_colour, guide = F) +
+  geom_point(aes(size = true_sample, shape = factor(study_setting))) + 
+  scale_size_continuous(trans = "log10", guide = F) +
+  scale_shape_manual(values = c(15, 16, 17), labels = c("Community", "Community & Hospital", "Hospital")) +
+  geom_linerange(aes(ymin = lower_ci, ymax =upper_ci), linetype = "solid") +
   geom_segment(data = filter(current_sorted_data, study == 1), aes(x = 0, 
                                                                    xend = prevalence_country + 0.5,
                                                                    y = mean,
-                                                                   yend = mean),
-               linetype = "dashed") +
+                                                                   yend = mean)) +
+  scale_linetype_manual(values = c(4, 3, 1), labels = c("Community", "Community & Hospital", "Hospital")) +
   geom_segment(data = filter(current_sorted_data, study == 0), aes(x = 0, 
                                                                    xend = prevalence_country + 0.5,
                                                                    y = prevalence,
-                                                                   yend = prevalence),
+                                                                   yend = prevalence), linetype = "solid",
                size = 0.8) +
   scale_y_continuous(name = "Prevalence", limits = c(0, 0.7), breaks = scales::pretty_breaks(n = 9), expand = c(0, 0)) +
   coord_flip() +
@@ -71,8 +77,9 @@ a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_coun
         panel.background = element_blank(),
         axis.line.x = element_line(colour = "black"),
         strip.text.y.left = element_text(angle = 0),
-        legend.position = "none") +
-  labs(title ="Prevalence of current smoking in included studies")
+        legend.position = "right") +
+  labs(title ="Prevalence of current smoking in included studies",
+       linetype = "Prevalence by setting", shape = "Study setting")
 a
 
 png(here::here('reports', 'figure', 'figure_2a.png'), width=912, height=970, res = 120)
@@ -85,20 +92,22 @@ former_sorted_data <- sorted_data %>%
   filter(., prevalence_country != 0 ) %>%
   arrange(-prevalence, .by_group = T)
 
-a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count, y = prevalence, colour = country)) +
-  scale_colour_manual(values = country_colour) +
-  geom_point(aes(size = true_sample)) + 
-  scale_size_continuous(trans = "log10") +
-  geom_linerange(aes(ymin = lower_ci, ymax =upper_ci)) +
+a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count, y = prevalence, colour = country,  linetype = study_setting)) +
+  scale_colour_manual(values = country_colour, guide = F) +
+  geom_point(aes(size = true_sample, shape = factor(study_setting))) + 
+  scale_size_continuous(trans = "log10", guide = F) +
+  scale_shape_manual(values = c(15, 16, 17), labels = c("Community", "Community & Hospital", "Hospital")) +
+  geom_linerange(aes(ymin = lower_ci, ymax =upper_ci), linetype = "solid") +
   geom_segment(data = filter(former_sorted_data, study == 1), aes(x = 0, 
                                                                    xend = prevalence_country + 0.5,
                                                                    y = mean,
-                                                                   yend = mean),
-               linetype = "dashed") +
+                                                                   yend = mean)) +
+  scale_linetype_manual(values = c(4, 3, 1), labels = c("Community", "Community & Hospital", "Hospital")) +
   geom_segment(data = filter(former_sorted_data, study == 0), aes(x = 0, 
                                                                    xend = prevalence_country + 0.5,
                                                                    y = prevalence,
                                                                    yend = prevalence),
+               linetype = "solid",
                size = 0.8) +
   scale_y_continuous(name = "Prevalence", limits = c(0, 0.7), breaks = scales::pretty_breaks(n = 9), expand = c(0, 0)) +
   coord_flip() +
@@ -113,8 +122,9 @@ a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count
         panel.background = element_blank(),
         axis.line.x = element_line(colour = "black"),
         strip.text.y.left = element_text(angle = 0),
-        legend.position = "none") +
-  labs(title ="Prevalence of former smoking in included studies")
+        legend.position = "right") +
+  labs(title ="Prevalence of former smoking in included studies",
+       linetype = "Prevalence by setting", shape = "Study setting")
 a
 
 png(here::here('reports', 'figure', 'figure_2b.png'), width=912, height=967, res = 120)

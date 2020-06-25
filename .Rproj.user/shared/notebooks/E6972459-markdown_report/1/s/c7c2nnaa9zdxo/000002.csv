@@ -1,3 +1,0 @@
-"0","exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated')"
-"0",""
-"0","exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara', 'isaric_4', 'mehra', 'hopkinson')"
