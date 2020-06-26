@@ -35,8 +35,8 @@ sorted_data <- data %>%
   add_count(name = "prevalence_country") %>%
   mutate(running_count = row_number()) %>%
   group_by(smoking, country, study, study_setting) %>%
-  mutate(mean = ifelse(is.na(weightedMean(prevalence, w = true_sample, idxs = c(smoking, country, study))), mean(prevalence),
-                         weightedMean(prevalence, w = true_sample, idxs = c(smoking, country, study))),
+  mutate(mean = ifelse(is.na(weightedMean(prevalence, w = true_sample)), mean(prevalence),
+                         weightedMean(prevalence, w = true_sample, na.rm = T)),
          prevalence_country = prevalence_country - 1)
 
 sorted_data$running_count <- as_factor(sorted_data$running_count)  
@@ -79,7 +79,7 @@ a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_coun
         strip.text.y.left = element_text(angle = 0),
         legend.position = "right") +
   labs(title ="Prevalence of current smoking in included studies",
-       linetype = "Prevalence by setting", shape = "Study setting")
+       linetype = "Weighted mean prevalence by study setting", shape = "Study setting")
 a
 
 png(here::here('reports', 'figure', 'figure_2a.png'), width=912, height=970, res = 120)
@@ -109,7 +109,7 @@ a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count
                                                                    yend = prevalence),
                linetype = "solid",
                size = 0.8) +
-  scale_y_continuous(name = "Prevalence", limits = c(0, 0.7), breaks = scales::pretty_breaks(n = 9), expand = c(0, 0)) +
+  scale_y_continuous(name = "Prevalence", limits = c(0, 0.9), breaks = scales::pretty_breaks(n = 9), expand = c(0, 0)) +
   coord_flip() +
   facet_grid(country ~  ., scales = "free_y", space = "free", switch = 'y') +
   theme(panel.spacing = unit(0.1, "lines"),
@@ -124,7 +124,7 @@ a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count
         strip.text.y.left = element_text(angle = 0),
         legend.position = "right") +
   labs(title ="Prevalence of former smoking in included studies",
-       linetype = "Prevalence by setting", shape = "Study setting")
+       linetype = "Weighted mean prevalence by study setting", shape = "Study setting")
 a
 
 png(here::here('reports', 'figure', 'figure_2b.png'), width=912, height=967, res = 120)

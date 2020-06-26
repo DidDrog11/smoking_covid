@@ -84,7 +84,6 @@ al_hindawi,2020-05-20,medrxiv,https://doi.org/10.1101/2020.05.16.20103853,rosema
 basse,2020-05-19,medrxiv,https://doi.org/10.1101/2020.05.14.20101576,rosemary,v4,france,retrospective_cohort,hospital,141,NA,92
 freites,2020-05-19,medrxiv,https://doi.org/10.1101/2020.05.14.20101584,rosemary,v4,spain,retrospective_cohort,hospital,123,NA,93
 alshami,2020-05-19,medrxiv,https://doi.org/10.1101/2020.05.13.20100222,rosemary,v4,saudi_arabia,retrospective_cohort,quarantine_centre,128,NA,94
-russell,2020-05-19,medrxiv,https://doi.org/10.1101/2020.05.12.20094219,rosemary,v4,uk,retrospective_cohort,hospital,106,NA,95
 berumen,2020-05-26,medrxiv,https://doi.org/10.1101/2020.05.24.20104414,rosemary,v4,mexico,case_control,hospital,102875,NA,96
 gianfrancesco,2020-05-29,annals_of_the_rheumatic_diseases,http://dx.doi.org/10.1136/annrheumdis-2020-217871,rosemary,v4,multiple,retrospective_cohort,community_and_hospital,600,NA,97
 li_long,2020-05-28,movement_disorders,https://doi-org.libproxy.ucl.ac.uk/10.1002/mds.28172,rosemary,v4,china,prospective_cohort,not_stated,145,NA,98
@@ -147,3 +146,4 @@ olivares,2020-06-16,medrxiv,https://doi.org/10.1101/2020.06.14.20130898,olga,v5,
 salton,2020-06-20,medrxiv,https://doi.org/10.1101/2020.06.17.20134031,olga,v5,italy,retrospective_cohort,hospital,173,NA,155
 wei,2020-06-18,medrxiv,https://doi.org/10.1101/2020.06.16.20133181,olga,v5,usa,prospective_cohort,hospital,147,NA,156
 zuo_estes,2020-06-17,medrxiv,https://doi.org/10.1101/2020.06.15.20131607,olga,v5,china,retrospective_cohort,hospital,172,NA,157
+killerby,2020-06-17,cdc_report,https://www.cdc.gov/mmwr/volumes/69/wr/mm6925e1.htm?s_cid=mm6925e1_e&deliveryName=USCDC_921-DM30747#T1_down,david,v5,usa,retrospective_cohort,community_and_hospital,531,NA,158

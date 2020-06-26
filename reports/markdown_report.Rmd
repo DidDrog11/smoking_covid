@@ -64,7 +64,7 @@ We import the data from the dataset that is available in the "data for analysis"
 In future versions we may open a tab in the Google sheet to allow people to submit relevant papers for us to incorporate in our review.
 
 ```{r raw_data, cache=T}
-sheets_id <- as_sheets_id("https://docs.google.com/spreadsheets/d/10TLHYACXrkFUmGaoKCiRes1NMckH3RVXnBJ-4kUC-qY/edit?usp=sharing")
+sheets_id <- as_sheets_id("https://docs.google.com/spreadsheets/d/1qoJT05r1jvkKj81-tnDLDN9Fe7bkVhhD-USTj7k5uRQ/edit?usp=sharing")
 search_details <- read_sheet(sheets_id, range = 'article_screening')
 data_study_general <- read_sheet(sheets_id, range =  'general_details')
 table_1 <- read_sheet(sheets_id, sheet = 'pop_descriptives')
@@ -263,7 +263,7 @@ analysed_versions <- c('v1', 'v2', 'v3', 'v4', 'v5')
 
 As we don't want to remove studies from the dataset despite them no longer being included the excluded studies are defined in this chunk of code.
 ``` {r excluding_studies}
-exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated')
+exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated', 'russell')
 
 exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated')
 ```
@@ -380,6 +380,18 @@ country <- table_1$country %>%
          'Number' = 2) %>%
   mutate(Country = as.character(Country))
 
+ggplot(country, aes(x = reorder(Country, desc(-Number)), y = Number))+
+  geom_col()+
+  coord_flip()+
+  theme_bw()+
+  labs(title = 'Countries where studies were performed',
+       y = 'Number of studies',
+       x = 'Country')
+
+a <- flextable(country) %>%
+  set_table_properties(width = 0.5, layout = 'autofit')
+a
+
 country <- subset(country, Country != "Multiple")
 
 country <- mutate_geocode(country, Country)
@@ -414,21 +426,6 @@ study_countries <- ggplot() +
   labs(title = "Number of studies",
        caption = "D. Kahle and H. Wickham. ggmap: Spatial Visualization with ggplot2. The R Journal")
 study_countries
-
-ggplot(country, aes(x = reorder(Country, desc(-Number)), y = Number))+
-  geom_col()+
-  coord_flip()+
-  theme_bw()+
-  labs(title = 'Countries where studies were performed',
-       y = 'Number of studies',
-       x = 'Country')
-
-country <- country %>%
-  select(-c(lon, lat))
-
-a <- flextable(country) %>%
-  set_table_properties(width = 0.5, layout = 'autofit')
-a
 
 save_as_docx(a, path = here('data_clean', 'Countries_performing_studies.docx'))  
 
@@ -525,9 +522,10 @@ current_former_smok <- table_1 %>%
 ``` {r missing/never/unknown/not stated}
 #Studies reporting missing data
 missing_smok <- table_1 %>%
-  filter(., missing != 'NA')
-
-
+  filter(., missing != 'NA') %>%
+  mutate(percent = missing/total*100)
+minimum <- min(missing_smok$percent)
+maximum <- max(missing_smok$percent)
 #Studies reporting never/unknown
 never_smok_unknown <- table_1 %>%
   filter(., never_smoker_unknown != 'NA')
@@ -537,6 +535,9 @@ smok_not_stated <- table_1 %>%
   filter(., not_stated != 'NA')
 ```
 * **Missing, never/unknown and not stated:** studies report on the numbers of missing (`r paste(nrow(missing_smok))`), never/unknown (`r paste(nrow(never_smok_unknown))`) or not stated (`r paste(nrow(smok_not_stated))`) smoking history. This is often framed as absence of a smoking history.
+
+**Minimum missing:** `r paste(minimum)`
+**Maximum missing:** `r paste(maximum)`
 
 ``` {r complete}
 #Studies reporting current, former and never smoking status
@@ -777,7 +778,9 @@ cleaned_names <- c('Chow, Us, Cdc',
                    "Hernandez, Gardano",
                    "Siso, Almirall",
                    "Martinez, Jiminez",
-                   "eugen_olsen")
+                   "eugen_olsen",
+                   "Mcqueenie")
+                   
 correct_names <- c('Chow (US CDC)',
                    "Gold (US CDC)",
                    "Miyara",
@@ -795,11 +798,12 @@ correct_names <- c('Chow (US CDC)',
                    "Eugen-Olsen",
                    "Martinez-Portilla",
                    "Raisi-Estabragh",
-                   "Miyara (medRxiv)",
+                   "Miyara",
                    "Hernandez-Gardano",
                    "Siso-Almirall",
                    "Martinez-Jiminez",
-                   "Eugen-Olsen")
+                   "Eugen-Olsen",
+                   "McQueenie")
 
 author_list <- plyr::mapvalues(a$`Lead author`,
                                from = cleaned_names,
@@ -818,7 +822,7 @@ numeric_columns <- c('Median (IQR)', 'Female %', 'Current smoker %', 'Current/fo
 
 datatable(a) %>%
   formatRound(
-    columns = c(4, 8:14),
+    columns = c(8:14),
     digits = 2,
     interval = 3,
     mark = ",",
@@ -993,9 +997,9 @@ testing_rr[[16]] <- RR_testing('Houlihan', 'former')
 testing_rr[[17]] <- RR_testing('Woolford', 'current')
 testing_rr[[18]] <- RR_testing('Woolford', 'former')
 testing_rr[[19]] <- RR_testing('Govind', 'current')
-testing_rr[[19]] <- RR_testing('Govind', 'former')
-testing_rr[[20]] <- RR_testing('Gu', 'current')
-testing_rr[[20]] <- RR_testing('Gu', 'former')
+testing_rr[[20]] <- RR_testing('Govind', 'former')
+testing_rr[[21]] <- RR_testing('Gu', 'current')
+testing_rr[[22]] <- RR_testing('Gu', 'former')
 
 
 data <- testing_rr
@@ -1026,6 +1030,10 @@ numbers_in_analysis <- table_2_word %>%
         mutate(contributing_sample = (contributing_sample - (negative_not_stated+positive_not_stated))) %>%
                        select(lead_author, contributing_sample) %>%
   na.omit()
+
+running_meta_count <- k %>%
+  group_by(study) %>%
+  summarise()
 ```
 The studies included in meta-analysis are `r knitr::combine_words(pull(included_studies, lead_author))`.
 
@@ -1046,13 +1054,15 @@ a<-metagen(current_never_meta$log_RR,
                        "Eugen-Olsen, n = 407",
                        "Houlihan, n = 200",
                        "Woolford, n = 4510",
+                       "Govind, n = 6309",
+                       "Gu, n = 5698",
                        "Niedzwiedz, n = 1474"),
            sm="RR",
            comb.fixed = F, comb.random = T)
 
 png(here::here('reports', 'figure','fig_3.png'), width=1024, height=546, res=120)
 forest(a,
-       xlim = c(0.1, 2),
+       xlim = c(0.1, 4),
        sortvar = a$TE,
        rightlabs = c('RR', '95% CI', 'Weight'),
        leftlabs = c('Author', 'logRR', 'SE'),
@@ -1088,14 +1098,14 @@ a<-metagen(current_never_meta$log_RR,
                        "Eugen-Olsen, n = 407",
                        "Houlihan, n = 200",
                        "Woolford, n = 4510",
-                       "Goving, n = 6309",
+                       "Govind, n = 6309",
                        "Gu, n = 5698",
                        "Niedzwiedz, n = 1474"),
            sm="RR", comb.fixed = F, comb.random = T)
 
 png(here::here('reports', 'figure','fig_4.png'), width=1024, height=546, res=120)
 forest(a,
-       xlim = c(0.3, 2),
+       xlim = c(0.3, 4),
        sortvar = a$TE,
        rightlabs = c('RR', '95% CI', 'Weight'),
        leftlabs = c('Author', 'logRR', 'SE'),
@@ -1285,8 +1295,6 @@ event_rates_smoker <- meta %>%
   rename('Author' = author) %>%
   select(Author, Ee, Ne, Ec, Nc)
 
-a <- event_rates_smoker
-
 event_rates_smoker <- metabin(Ee,
                               Ne,
                               Ec,
@@ -1300,6 +1308,7 @@ event_rates_smoker <- metabin(Ee,
                               prediction = F,
                               incr = 0.1,
                               sm = 'RR')
+
 png(here::here('reports', 'figure', 'fig_5.png'), width=1480, height=546, res=120)
 current_smoker_hospitalisation <- forest(event_rates_smoker,
                                 sortvar = Author,
@@ -1316,7 +1325,7 @@ current_smoker_hospitalisation <- forest(event_rates_smoker,
                                 digits.sd = 2)
 null <- dev.off()
 
-a
+event_rates_smoker
 ```
 ![Current versus never smokers](figure/fig_5.png)
 
@@ -1349,7 +1358,7 @@ a <- event_rates_former
 png(here::here('reports', 'figure', 'fig_6.png'), width=1480, height=546, res=120)
 former_smoker_hospitalisation <- forest(event_rates_former,
                                          sortvar = Author,
-                                         xlim = c(0.5, 5),
+                                         xlim = c(0.3, 3),
                                          rightlabs = c('RR', '95% CI', 'Weight'),
                                          leftlabs = c('Author', 'logRR', 'SE'),
                                          lab.e = 'Former smoker',
@@ -1362,6 +1371,11 @@ former_smoker_hospitalisation <- forest(event_rates_former,
                                          digits.sd = 2)
 null <- dev.off()
 a
+
+running_meta_count <- running_meta_count %>%
+  full_join(., meta %>%
+  rename("study" = author), by = "study") %>%
+  select(study)
 ```
 ![Former versus never smokers](figure/fig_6.png)
 
@@ -1611,6 +1625,10 @@ null <- dev.off()
 
 event_rates_former
 
+running_meta_count <- running_meta_count %>%
+  full_join(., meta %>%
+  rename("study" = author), by = "study") %>%
+  select(study)
 ```
 ![Former versus never smokers](figure/fig_8.png)
 
@@ -1755,9 +1773,11 @@ The number of studies reporting on hospitalisation by smoking status is: `r past
 #### Smoking and COVID-19 mortality meta-analysis
 
 ```{r current_never mortality, echo = F}
+exclude <- c("cepelowicz", "garassino")
 table_5 <- table_5_word
 included_studies <- quality_table_5 %>%
   filter(overall_quality == 'fair') %>%
+  filter(!lead_author %in% exclude) %>%
   select(lead_author)
 ```
 The studies included in meta-analysis are `r paste(included_studies, sep = ', ')`.
@@ -1862,6 +1882,11 @@ null <- dev.off()
 
 event_rates_former
 
+running_meta_count <- running_meta_count %>%
+  full_join(., meta %>%
+  rename("study" = author), by = "study") %>%
+  select(study)
+
 ```
 
 ![Former versus never smokers](figure/fig_10.png)
@@ -1873,3 +1898,5 @@ fair <- nrow(filter(quality_rating, quality_rating$overall_quality == "fair" ))
 poor <- nrow(filter(quality_rating, quality_rating$overall_quality == "poor" ))
 ```
 The number of **Fair** quality studies are `r paste(fair)` with the number of **Poor** quality studies equal to `r paste(poor)`
+
+The number of studies included in **Meta-analysis** are `r paste(nrow(running_meta_count))`
