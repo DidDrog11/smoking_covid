@@ -14,7 +14,7 @@ output:
     toc_depth: 3
     toc_float: yes
     css: !expr here::here('css', 'style.css')
-    keep_md: true
+    keep_md: false
 editor_options: 
   chunk_output_type: inline
 ---
@@ -24,7 +24,7 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE,
                       warning = F,
                       message = F)
-
+options(width = 180)
 unlink('reports/markdown_report_cache', recursive = TRUE)
 
 ```
@@ -264,8 +264,6 @@ analysed_versions <- c('v1', 'v2', 'v3', 'v4', 'v5')
 As we don't want to remove studies from the dataset despite them no longer being included the excluded studies are defined in this chunk of code.
 ``` {r excluding_studies}
 exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated', 'russell')
-
-exclude_from_qa <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated')
 ```
 We have excluded from the analysis the following studies: `r knitr::combine_words(exclude_from_analysis)`
 
@@ -304,9 +302,6 @@ table_5 <- table_5 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
   filter(!(lead_author %in% exclude_from_analysis))
-
-table_6 <- table_6 %>%
-  filter(!(lead_author %in% exclude_from_qa))
 
 a <- data_study_general %>%
   select(lead_author, date_published, source, study_id) %>%

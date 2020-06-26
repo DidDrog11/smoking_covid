@@ -46,7 +46,7 @@ current_sorted_data <- sorted_data %>%
   arrange(-prevalence, .by_group = T) %>%
   ungroup() %>%
   group_by(country) %>%
-  filter(!country %in% c("Brazil", "India", "Portugal", "Turkey"))
+  filter(!country %in% c("Brazil", "India", "Portugal", "Turkey", "Chile", "Germany"))
 
 a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_count, y = prevalence, colour = country, linetype = study_setting)) +
   scale_colour_manual(values = country_colour, guide = F) +
