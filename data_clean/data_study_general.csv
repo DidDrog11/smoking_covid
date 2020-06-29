@@ -22,7 +22,7 @@ wang_pan,2020-03-24,international_journal_of_infectious_diseases,https://doi.org
 petrilli,2020-04-11,medrxiv,https://doi.org/10.1101/2020.04.08.20057794,david,v1,usa,retrospective_cohort,community_and_hospital,4103,NA,22
 chow_us_cdc,2020-03-31,report,https://www.cdc.gov/mmwr/volumes/69/wr/mm6913e2.htm?s_cid=mm6913e2_e&deliveryName=USCDC_921-DM24524,david,v1,usa,retrospective_cohort,community_and_hospital,7162,NA,23
 dong_cao,2020-03-20,allergy,https://doi.org/10.1111/all.14289,olga,v1,china,retrospective_cohort,hospital,9,NA,25
-kim,2020-04-01,journal_of_korean_medical_science,https://doi.org/10.3346/jkms.2020.35.e142,olga,v1,korea,retrospective_cohort,hospital,28,NA,26
+kim,2020-04-01,journal_of_korean_medical_science,https://doi.org/10.3346/jkms.2020.35.e142,olga,v1,south_korea,retrospective_cohort,hospital,28,NA,26
 shi_yu,2020-03-18,bmc_critical_care,https://doi.org/10.1186/s13054-020-2833-7,olga,v1,china,retrospective_cohort,hospital,487,NA,27
 yang_yu,2020-02-24,the_lancet_respiratory_medicine,https://doi.org/10.1016/S2213-2600(20)30079-5,olga,v1,china,retrospective_cohort,hospital,52,NA,28
 argenziano,2020-04-22,medrxiv,https://www.medrxiv.org/content/10.1101/2020.04.20.20072116v1.full.pdf,olga,v2,usa,retrospective_cohort,hospital,1000,NA,29
