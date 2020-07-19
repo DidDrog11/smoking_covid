@@ -1,0 +1,54 @@
+---
+title: 'Smoking and COVID Living Review: a bayesian analysis'
+author: "David Simons, Lion Shahab, Jamie Brown and Olga Perski"
+date: "`r format(Sys.time(), '%A %d %B %Y')`"
+output: 
+  
+  html_document:
+    code_folding: hide
+    highlight: zenburn
+    number_sections: true
+    theme: spacelab
+    toc: true
+    toc_collapse: true
+    toc_depth: 3
+    toc_float: yes
+    css: !expr here::here('css', 'style.css')
+    keep_md: false
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r install_packages, include=FALSE}
+library(brms)
+
+```
+
+``` {r setup_data}
+bayes_testing_current
+bayes_testing_former
+bayes_hospital_current
+bayes_hospital_former
+bayes_severity_current
+bayes_severity_former
+bayes_mortality_current
+bayes_mortality_former
+
+```
+
+``` {r priors}
+
+priors <- c(prior(normal(0,1), class = Intercept),
+            prior(cauchy(0,0.5), class = sd))
+
+```
+
+``` {r bayes_testing}
+
+m1.brm <- brm(log_RR|se(log_SE) ~ 1 + (1|study),
+              data = bayes_testing_current,
+              prior = priors,
+              iter = 4000)
+
+```

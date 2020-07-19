@@ -10,7 +10,7 @@ output:
     number_sections: true
     theme: spacelab
     toc: true
-    toc_collaps: true
+    toc_collapse: true
     toc_depth: 3
     toc_float: yes
     css: !expr here::here('css', 'style.css')
@@ -144,7 +144,7 @@ The final sheet was used to collate data on **Study quality** however, we have d
 
 The data from the google sheets document is then cleaned using a script from the `linelist` package which has been developed by T. Jombat and Z. Kamvar within the [R Epidemics Consortium](https://www.repidemicsconsortium.org/)
 
-The script `clean_data()` ensures consistency among column names, country names, dates and missing values in the included sheets. Data is also saves as `.rds` files in the `/data_clean` folder of the project repository. 
+The script `clean_data()` ensures consistency among column names, country names, dates and missing values in the included sheets. Data is also saved as `.rds` files in the `/data_clean` folder of the project repository. 
 
 ```{r clean_data}
 
@@ -248,23 +248,24 @@ save_as_docx(a, path = here('data_clean', 'all_studies.docx'))
 ``` {r versioning}
 date_of_update <- Sys.Date()
 
-prev_versions <- c('v1', 'v2', 'v3', 'v4')
+prev_versions <- c('v1', 'v2', 'v3', 'v4', 'v5')
 #This can categorise which studies we want to look at
-current_version <- c('v5')
+current_version <- c('v6')
 #This will categorise which studies we are including in the current report
 
-analysed_versions <- c('v1', 'v2', 'v3', 'v4', 'v5')
+analysed_versions <- c('v1', 'v2', 'v3', 'v4', 'v5', 'v6')
 #This will incorporate all studies into the current version of the report
 ```
-We define the current version of the report here. At the moment this needs to be changed directly in the underlying code. This report has been generated for version `r paste(current_version)`
+We define the current version of the report here. At the moment this needs to be changed directly when compiling the code. This report has been generated for version `r paste(current_version)`
 
 ``` {r excluding_studies}
-exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated', 'russell')
+
+exclude_from_analysis <- c('isaric_1', 'isaric_2', 'isaric_3', 'miyara_old', 'isaric_4', 'mehra', 'hopkinson', 'gaibazzi', 'miyara_updated', 'russell', "petrilli_old", "magagnoli_old", "niedzwiedz_old", "bello_chavolla_old", "kimmig_old", "russell_old", "zuo_zuo_old", "patel_old")
 ```
-As we don't want to remove studies from the dataset despite them no longer being included the excluded studies are defined in this chunk of code. We have excluded from the analysis the following studies: `r knitr::combine_words(exclude_from_analysis)`.
+We don't want to remove studies from the dataset despite them no longer being included in the analysis. The excluded studies are defined in this chunk of code. We have excluded this version the following studies: `r knitr::combine_words(exclude_from_analysis)`.
 
 ### Filter the included studies
-Based on the version and excluded studies we produce the tables for analysis. This is a searchable table for Lead author name
+Based on the version and excluded studies we produce the tables for analysis. This is a searchable table.
 ``` {r descriptives}
 
 data_study_general <- data_study_general %>%
@@ -352,7 +353,7 @@ a
 
 ### We summarise where the studies were conducted
 
-As the pandemic continues studies are being reported from increasing numbers of countries.
+As the pandemic continues studies are being reported from an increasing numbers of countries.
 
 ``` {r countries}
 library('ggmap')
@@ -416,8 +417,8 @@ country_map <- country %>%
   mutate(Country = plyr::mapvalues(Country, from = from_countries,
                 to = to_countries))
 
-from_countries <- c("US", "Iran", "Korea, South")
-to_countries <- c("United States", "Iran (Islamic Republic of)", "Korea, Republic of")
+from_countries <- c("US", "Iran", "Korea, South", "Czech Republic")
+to_countries <- c("United States", "Iran (Islamic Republic of)", "Korea, Republic of", "Czechia")
 
 data("coronavirus")
 summary_df <- coronavirus %>% 
@@ -447,7 +448,7 @@ mypalette <- colorBin(palette="YlOrBr", domain=my_spdf@data$Number, na.color="tr
 mytext <- paste(
   "Country: ", my_spdf@data$NAME,"<br/>", 
   "Number of studies included: ", my_spdf@data$Number, "<br/>", 
-  "Number of COVID-19 reported cases (thousands): ", round(my_spdf@data$total_cases, 2), 
+  "COVID-19 reported cases (thousands): ", round(my_spdf@data$total_cases, 2), 
   sep="") %>%
   lapply(htmltools::HTML)
 
@@ -471,7 +472,7 @@ html_map <- leaflet(my_spdf) %>%
 
 html_map
 ```
-This map displays the number of studies produced in each country. The number of confirmed COVID-19 cases are shown when resting over each country for reference, data on confirmed cases have been obtained from [Rami Krispin's `coronavirus` package](https://ramikrispin.github.io/coronavirus/)
+This map displays the number of studies produced in each country. The number of confirmed COVID-19 cases are shown when resting over each country for reference, data on confirmed cases have been obtained from [Rami Krispin's `coronavirus` package](https://ramikrispin.github.io/coronavirus/). The number of cases is updated when the report is generated so will not remain in date, it is current as of `r paste(Sys.time())`
 
 ### We sumarise the settings in which they were conducted
 
@@ -495,7 +496,33 @@ a
 save_as_docx(a, path = here('data_clean', 'Countries_performing_studies.docx'))  
 
 ```
+### We summarise the design of the included studies
 
+The majority were retrospective cohorts. There were fewer case-control and cross-sectional studies. There were some prospective cohorts established and reported.
+
+``` {r design}
+
+design <- to_upper_camel_case(data_study_general$study_design, sep_out = ' ') %>%
+  recode("Rct" = "RCT") %>%
+  table(.) %>%
+  sort('Number of studies', decreasing = T) %>%
+  as.data.frame() %>%
+  arrange(desc(Freq)) %>%
+  rename('Design' = 1,
+         'Number' = 2)
+
+a <- flextable(design) %>%
+  set_table_properties(width = 0.5, layout = 'autofit')
+a
+
+save_as_docx(a, path = here('data_clean', 'Study_designs.docx'))  
+
+##For supplementary tables
+study_design <- data_study_general %>%
+  select(lead_author, study_design) %>%
+  mutate(study_design = to_upper_camel_case(study_design, sep_out = " "),
+         study_design = ifelse(study_design == "Rct", "Randomised Controlled Trial", study_design))
+```
 ### We update the number of participants we have included
 
 * **Summary statistics:** this table will give us the mean, median and IQR of the samples in the review 
@@ -577,9 +604,8 @@ smok_not_stated <- table_1 %>%
   filter(., not_stated != 'NA')
 ```
 * **Missing, never/unknown and not stated:** studies report on the numbers of missing (`r paste(nrow(missing_smok))`), never/unknown (`r paste(nrow(never_smok_unknown))`) or not stated (`r paste(nrow(smok_not_stated))`) smoking history. This is often framed as absence of a smoking history.
-
-**Minimum missing:** `r paste(round(minimum,2), "%", sep = "")`  
-**Maximum missing:** `r paste(round(maximum,2), "%", sep = "")`
+  + **Minimum missing:** `r paste(round(minimum,2), "%", sep = "")`  
+  + **Maximum missing:** `r paste(round(maximum,2), "%", sep = "")`
 ``` {r complete}
 #Studies reporting current, former and never smoking status
 full_smoking_status <- table_1 %>%
@@ -622,7 +648,7 @@ b <- semi_full_smoking_status %>%
 
 b$`Lead author` <- to_upper_camel_case(b$`Lead author`, sep_out = ", ")
 ```
-**Studies reporting partially incomplete smoking data:** `r paste(nrow(semi_full_smoking_status))`  
+* **Studies reporting partially incomplete smoking data:** `r paste(nrow(semi_full_smoking_status))`  
 These studies typically report smoking history as the measure of exposure which is why they have grouped values for current/former smokers
 ``` {r}
 
@@ -652,7 +678,7 @@ b <- incomplete_smoking_status %>%
 
 b$`Lead author` <- to_upper_camel_case(b$`Lead author`, sep_out = ", ")
 ```
-**Studies missing key smoking data:** `r paste(nrow(incomplete_smoking_status))`  
+* **Studies missing key smoking data:** `r paste(nrow(incomplete_smoking_status))`  
 ``` {r}
 
 datatable(b,
@@ -771,7 +797,6 @@ a <- table_1_word %>%
          st_dev = na_if(st_dev, 'NA-NA'))
 
 a$iqr <- coalesce(a$iqr, a$range_combined, a$st_dev)
-a$iqr_used <- coalesce(a$range_used, a$st_dev_used)
 
 a <- a %>%
   select(study_id, lead_author, date_published, country, sample_size, study_setting, median_mean, mean_used, iqr,
@@ -821,7 +846,13 @@ cleaned_names <- c('Chow, Us, Cdc',
                    "Siso, Almirall",
                    "Martinez, Jiminez",
                    "eugen_olsen",
-                   "Mcqueenie")
+                   "Mcqueenie",
+                   "Martin, Jiminez",
+                   "Bello, Chavolla",
+                   "De, Melo",
+                   "De, Souza",
+                   "Bello, Chavolla, Antonio, Villa",
+                   "Antonio, Villa")
                    
 correct_names <- c('Chow (US CDC)',
                    "Gold (US CDC)",
@@ -845,7 +876,13 @@ correct_names <- c('Chow (US CDC)',
                    "Siso-Almirall",
                    "Martinez-Jiminez",
                    "Eugen-Olsen",
-                   "McQueenie")
+                   "McQueenie",
+                   "Martin-Jiminez",
+                   "Bello-Chavolla",
+                   "de Melo",
+                   "de Souza",
+                   "Bello-Chavolla, Antonio-Villa",
+                   "Antonio-Villa")
 
 author_list <- plyr::mapvalues(a$`Lead author`,
                                from = cleaned_names,
@@ -968,7 +1005,7 @@ numeric_columns <- c('Population_tested', 'SARS_CoV_2_negative', 'N_current_smok
                      'P_former_smoker', 'P_current_former_smoker', 'P_never_smoker', 'P_not_stated')
 a <- flextable(a) %>%
     set_caption(caption = 'SARS-CoV-2 infection by smoking status') %>%
-  colformat_num(col_keys = numeric_columns, digits = 0, na_str = '-', big.mark = ',')
+  colformat_num(j = numeric_columns, digits = 0, na_str = '-', big.mark = ',')
 ```
 The number of studies reporting on infection by smoking status is: `r paste(nrow(table_2_word))`
 ``` {r}
@@ -1002,7 +1039,7 @@ source(here::here('scripts', 'rr_function.R'))
 table_2 <- table_2_word
 
 included_studies <- quality_table_2 %>%
-  filter(overall_quality == 'fair') %>%
+  filter(overall_quality != 'poor') %>%
   select(lead_author)
 
 meta <- tibble('author' = table_2$lead_author,
@@ -1041,7 +1078,12 @@ testing_rr[[19]] <- RR_testing('Govind', 'current')
 testing_rr[[20]] <- RR_testing('Govind', 'former')
 testing_rr[[21]] <- RR_testing('Gu', 'current')
 testing_rr[[22]] <- RR_testing('Gu', 'former')
-
+testing_rr[[23]] <- RR_testing('Petrilli', 'current')
+testing_rr[[24]] <- RR_testing('Petrilli', 'former')
+testing_rr[[25]] <- RR_testing('Auvinen', 'current')
+testing_rr[[26]] <- RR_testing('Auvinen', 'former')
+testing_rr[[27]] <- RR_testing('Merkely', 'current')
+testing_rr[[28]] <- RR_testing('Merkely', 'former')
 
 data <- testing_rr
 k <- do.call(rbind.data.frame, data)
@@ -1071,6 +1113,10 @@ numbers_in_analysis <- table_2_word %>%
         mutate(contributing_sample = (contributing_sample - (negative_not_stated+positive_not_stated))) %>%
                        select(lead_author, contributing_sample) %>%
   na.omit()
+numbers_in_analysis$lead_author <- to_upper_camel_case(numbers_in_analysis$lead_author, sep_out = ", ")
+numbers_in_analysis$lead_author <- plyr::mapvalues(numbers_in_analysis$lead_author,
+                               from = cleaned_names,
+                               to = correct_names)
 
 running_meta_count <- k %>%
   group_by(study) %>%
@@ -1082,24 +1128,21 @@ The studies included in meta-analysis are `r knitr::combine_words(pull(included_
 ```{r current_never}
 #current vs. never smokers
 current_never_meta <- k %>%
-  filter(smoking_status == 'current')
-  
-a<-metagen(current_never_meta$log_RR,
+  filter(smoking_status == 'current') %>%
+  left_join(., numbers_in_analysis %>%
+              rename("study" = lead_author),
+            by = c("study")) %>%
+  mutate(study = paste(study, contributing_sample, sep = ", n = ")) %>%
+  select(-contributing_sample)
+
+a <-metagen(current_never_meta$log_RR,
            current_never_meta$log_SE,
-           studlab = c("Rentsch, n = 3528",
-                       "Cho, n = 1331", 
-                       "Kolin, = 1462", 
-                       "de Lusignan, n = 3291", 
-                       "Parrotta, n = 74",
-                       "Israel, n = 24087 ",
-                       "Eugen-Olsen, n = 407",
-                       "Houlihan, n = 200",
-                       "Woolford, n = 4510",
-                       "Govind, n = 6309",
-                       "Gu, n = 5698",
-                       "Niedzwiedz, n = 1474"),
+           studlab = current_never_meta$study,
            sm="RR",
            comb.fixed = F, comb.random = T)
+
+
+write_rds(a, here("data_clean", "bayes_testing_current.rds"))
 
 png(here::here('reports', 'figure','fig_3.png'), width=1024, height=546, res=120)
 forest(a,
@@ -1125,24 +1168,20 @@ a
 ```{r former_never}
 #former vs. never smokers
 
-current_never_meta <- k %>%
-  filter(smoking_status == 'former')
+former_never_meta <- k %>%
+  filter(smoking_status == 'former') %>%
+  left_join(., numbers_in_analysis %>%
+              rename("study" = lead_author),
+            by = c("study")) %>%
+  mutate(study = paste(study, contributing_sample, sep = ", n = ")) %>%
+  select(-contributing_sample)
 
-a<-metagen(current_never_meta$log_RR,
-           current_never_meta$log_SE,
-           studlab = c("Rentsch, n = 3528",
-                       "Cho, n = 1331", 
-                       "Kolin, = 1462", 
-                       "de Lusignan, n = 3291", 
-                       "Parrotta, n = 74",
-                       "Israel, n = 24087 ", 
-                       "Eugen-Olsen, n = 407",
-                       "Houlihan, n = 200",
-                       "Woolford, n = 4510",
-                       "Govind, n = 6309",
-                       "Gu, n = 5698",
-                       "Niedzwiedz, n = 1474"),
+a<-metagen(former_never_meta$log_RR,
+           former_never_meta$log_SE,
+           studlab = former_never_meta$study,
            sm="RR", comb.fixed = F, comb.random = T)
+
+write_rds(a, here("data_clean", "bayes_testing_former.rds"))
 
 png(here::here('reports', 'figure','fig_4.png'), width=1024, height=546, res=120)
 forest(a,
@@ -1305,7 +1344,7 @@ save_as_docx(a, path = here('data_clean', 'Table_3.docx'))
 ```{r current_never hospitalisaiton, echo = F}
 table_3 <- table_3_word
 included_studies <- quality_table_3 %>%
-  filter(overall_quality == 'fair') %>%
+  filter(overall_quality != 'poor') %>%
   select(lead_author)
   
 ```
@@ -1349,6 +1388,8 @@ event_rates_smoker <- metabin(Ee,
                               prediction = F,
                               incr = 0.1,
                               sm = 'RR')
+
+write_rds(event_rates_smoker, here("data_clean", "bayes_hospital_current.rds"))
 
 png(here::here('reports', 'figure', 'fig_5.png'), width=1480, height=546, res=120)
 current_smoker_hospitalisation <- forest(event_rates_smoker,
@@ -1394,7 +1435,7 @@ event_rates_former <- metabin(Ee,
                               incr = 0.1,
                               sm = 'RR')
 
-a <- event_rates_former
+write_rds(event_rates_former, here("data_clean", "bayes_hospital_former.rds"))
 
 png(here::here('reports', 'figure', 'fig_6.png'), width=1480, height=546, res=120)
 former_smoker_hospitalisation <- forest(event_rates_former,
@@ -1411,7 +1452,7 @@ former_smoker_hospitalisation <- forest(event_rates_former,
                                          col.square.lines = 'black',
                                          digits.sd = 2)
 null <- dev.off()
-a
+event_rates_former
 
 running_meta_count <- running_meta_count %>%
   full_join(., meta %>%
@@ -1460,7 +1501,6 @@ quality_table_4 <- table_4_word %>%
   select(lead_author, overall_quality)
 
 a <- table_4_word %>%
-  filter(non_severe_disease >= 1) %>%
   mutate(Author = lead_author,
          Population = sample,
          non_severe_disease = paste(
@@ -1561,7 +1601,7 @@ save_as_docx(a, path = here('data_clean', 'Table_4.docx'))
 ```{r current_never severity, echo = F}
 table_4 <- table_4_word
 included_studies <- quality_table_4 %>%
-  filter(overall_quality == 'fair') %>%
+  filter(overall_quality != 'poor') %>%
   select(lead_author)
 ```
 The studies included in meta-analysis are `r knitr::combine_words(pull(included_studies, lead_author))`.
@@ -1604,6 +1644,9 @@ event_rates_smoker <- metabin(Ee,
                               prediction = F,
                               incr = 0.1,
                               sm = 'RR')
+
+write_rds(event_rates_smoker, here("data_clean", "bayes_severity_current.rds"))
+
 png(here::here('reports', 'figure', 'fig_7.png'), width=1024, height=546, res=120)
 current_smoker_severity <- forest(event_rates_smoker,
                                          sortvar = Author,
@@ -1647,6 +1690,8 @@ event_rates_former <- metabin(Ee,
                               prediction = F,
                               incr = 0.1,
                               sm = 'RR')
+
+write_rds(event_rates_former, here("data_clean", "bayes_severity_former.rds"))
 
 png(here::here('reports', 'figure', 'fig_8.png'), width=1024, height=546, res=120)
 former_smoker_severity <- forest(event_rates_former,
@@ -1712,7 +1757,6 @@ quality_table_5 <- table_5_word %>%
   select(lead_author, overall_quality)
 
 a <- table_5_word %>%
-  filter(recovered >= 1) %>%
   mutate(Author = lead_author,
          Population = sample,
          recovered = paste(
@@ -1817,7 +1861,7 @@ save_as_docx(a, path = here('data_clean', 'Table_5.docx'))
 exclude <- c("cepelowicz", "garassino")
 table_5 <- table_5_word
 included_studies <- quality_table_5 %>%
-  filter(overall_quality == 'fair') %>%
+  filter(overall_quality != 'poor') %>%
   filter(!lead_author %in% exclude) %>%
   select(lead_author)
 ```
@@ -1862,6 +1906,9 @@ event_rates_smoker <- metabin(Ee,
                               prediction = F,
                               incr = 0.1,
                               sm = 'RR')
+
+write_rds(event_rates_smoker, here("data_clean", "bayes_mortality_current.rds"))
+
 png(here::here('reports', 'figure', 'fig_9.png'), width=1024, height=546, res=120)
 current_smoker_mortality <- forest(event_rates_smoker,
                                          sortvar = Author,
@@ -1905,6 +1952,9 @@ event_rates_former <- metabin(Ee,
                               prediction = F,
                               incr = 0.1,
                               sm = 'RR')
+
+write_rds(event_rates_former, here("data_clean", "bayes_mortality_former.rds"))
+
 png(here::here('reports', 'figure', 'fig_10.png'), width=1024, height=546, res=120)
 former_smoker_mortality <- forest(event_rates_former,
                                          sortvar = Author,
@@ -1941,3 +1991,8 @@ poor <- nrow(filter(quality_rating, quality_rating$overall_quality == "poor" ))
 The number of **Fair** quality studies are `r paste(fair)` with `r paste(poor)` **Poor** quality studies
 
 The number of studies included in **Meta-analysis** are `r paste(nrow(running_meta_count))`
+
+## Supplementary tables
+
+### Data on clinical or virological diagnosis
+### Data on studies stratifying smoking status

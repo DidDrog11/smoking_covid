@@ -1,9 +1,13 @@
 {
-    "path" : "C:/Users/ucbtds4/R Repositories/smoking_covid/reports",
-    "sortOrder" : [
+    "path": "C:/Users/ucbtds4/R Repositories/smoking_covid/scripts",
+    "sortOrder": [
         {
-            "ascending" : false,
-            "columnIndex" : 2
+            "columnIndex": 2,
+            "ascending": true
+        },
+        {
+            "columnIndex": 4,
+            "ascending": false
         }
     ]
 }
