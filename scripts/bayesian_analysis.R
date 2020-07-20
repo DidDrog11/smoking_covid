@@ -24,6 +24,9 @@ study_review_version <- data_study_general %>%
   rename(Author = lead_author) %>%
   mutate(review_version = factor(fct_collapse(review_version, previous = previous_review_versions, current = current_review_version)))
 
+levels(study_review_version$review_version) <- c(levels(study_review_version$review_version), "combined_pooled") %>%
+  fct_relevel(c("previous", "current", "combined_pooled"))
+
 
 bayes_testing_current <-
   read_rds(here("data_clean", "bayes_testing_current.rds"))
@@ -124,7 +127,6 @@ current_testing_alternative_prior <- forest_plot(
   "Current testing prior",
   "m1_a.png"
 )
-
 
 # Former smokers testing --------------------------------------------------
 # Bayesian analysis for former smokers and testing for SARS-CoV-2

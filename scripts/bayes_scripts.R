@@ -40,7 +40,7 @@ study_draw <- function(dataset) {
 pooled_effect_draw <- function(dataset) {
   spread_draws(dataset, b_Intercept) %>%
     mutate(Author = "Pooled Effect",
-           review_version = "current")
+           review_version = factor("combined_pooled"))
 }
 
 forest_plot <- function(model, data_study, data_pooled, title, type, filename) {
@@ -77,11 +77,16 @@ forest_plot <- function(model, data_study, data_pooled, title, type, filename) {
       ),
       hjust = "inward"
     ) +
-    labs(x = "Relative Risk",
+    facet_grid(review_version~  ., scales = "free_y", space = "free") +
+    labs(x = "log Relative Risk",
          y = element_blank(),
          title = title,
-         caption = type) +
-    theme_minimal()
+         caption = type
+         ) +
+    scale_fill_discrete(name = "Review Version", labels = c("Current version", "Previous version", "All versions")) +
+    theme_minimal() +
+    theme(panel.spacing = unit(0.1, "lines"),
+          strip.text = element_blank())
   
   outputs <- list("plot" = graph, "data" = forest_data, "summary" = summary_forest)
   ggsave(filename = filename, plot = graph, device = "png", path = here("reports", "figure"))
