@@ -83,7 +83,7 @@ a <- ggplot(data = filter(current_sorted_data, study == 1), aes(x = running_coun
         strip.text.y.left = element_text(angle = 0),
         legend.position = "right") +
   labs(title ="Prevalence of current smoking in included studies",
-       colour = "Weighted mean prevalence by study setting", shape = "Study setting")
+       colour = "Weighted mean prevalence", shape = "Study setting")
 a
 
 png(here::here('reports', 'figure', 'figure_2a.png'), width=912, height=970, res = 120)
@@ -128,7 +128,7 @@ a <- ggplot(data = filter(former_sorted_data, study == 1), aes(x = running_count
         strip.text.y.left = element_text(angle = 0),
         legend.position = "right") +
   labs(title ="Prevalence of former smoking in included studies",
-       colour = "Weighted mean prevalence by study setting", shape = "Study setting")
+       colour = "Weighted mean prevalence", shape = "Study setting")
 a
 
 png(here::here('reports', 'figure', 'figure_2b.png'), width=912, height=967, res = 120)

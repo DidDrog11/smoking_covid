@@ -124,7 +124,7 @@ current_testing_alternative_prior <- forest_plot(
   study_draws_m1_a,
   pooled_draw_m1_a,
   "Forest plot of current smokers and risk of testing positive",
-  "Current testing prior",
+  "v5 testing prior",
   "m1_a.png"
 )
 
@@ -162,12 +162,13 @@ former_testing_minimal_prior <- forest_plot(
   "Minimally informative prior",
   "m2.png"
 )
+
 former_testing_alternative_prior <- forest_plot(
   m2_a,
   study_draws_m2_a,
   pooled_draw_m2_a,
   "Forest plot of former smokers and risk of testing positive",
-  "Current testing prior",
+  "v5 testing prior",
   "m2_a.png"
 )
 
@@ -210,7 +211,7 @@ current_hospitalisation_alternative_prior <- forest_plot(
   study_draws_m3_a,
   pooled_draw_m3_a,
   "Forest plot of current smokers and risk of hospital admission",
-  "Current hospitalisation prior",
+  "v5 hospitalisation prior",
   "m3_a.png"
 )
 
@@ -248,12 +249,13 @@ former_hospitalisation_minimal_prior <- forest_plot(
   "Minimally informative prior",
   "m4.png"
 )
+
 former_hospitalisation_alternative_prior <- forest_plot(
   m4_a,
   study_draws_m4_a,
   pooled_draw_m4_a,
   "Forest plot of former smokers and risk of hospital admission",
-  "Former hospitalisation prior",
+  "v5 hospitalisation prior",
   "m4_a.png"
 )
 
@@ -282,6 +284,8 @@ study_draws_m5 <- study_draw(m5)
 pooled_draw_m5 <- pooled_effect_draw(m5)
 
 study_draws_m5_a <- study_draw(m5_a)
+study_draws_m5_a$review_version[study_draws_m5_a$Author == "Guan"] <- "previous"
+
 pooled_draw_m5_a <- pooled_effect_draw(m5_a)
 
 current_severity_minimal_prior <- forest_plot(
@@ -297,7 +301,7 @@ current_severity_alternative_prior <- forest_plot(
   study_draws_m5_a,
   pooled_draw_m5_a,
   "Forest plot of current smokers and risk of severe disease",
-  "Current severity prior",
+  "v5 severity prior",
   "m5_a.png"
 )
 
@@ -325,6 +329,7 @@ study_draws_m6 <- study_draw(m6)
 pooled_draw_m6 <- pooled_effect_draw(m6)
 
 study_draws_m6_a <- study_draw(m6_a)
+study_draws_m6_a$review_version[study_draws_m6_a$Author == "Guan"] <- "previous"
 pooled_draw_m6_a <- pooled_effect_draw(m6_a)
 
 former_severity_minimal_prior <- forest_plot(
@@ -340,7 +345,7 @@ former_severity_alternative_prior <- forest_plot(
   study_draws_m6_a,
   pooled_draw_m6_a,
   "Forest plot of former smokers and risk of severe disease",
-  "Former severity prior",
+  "v5 severity prior",
   "m6_a.png"
 )
 
@@ -383,7 +388,7 @@ current_mortality_alternative_prior <- forest_plot(
   study_draws_m7_a,
   pooled_draw_m7_a,
   "Forest plot of current smokers and mortality",
-  "Current mortality prior",
+  "v5 mortality prior",
   "m7.png"
 )
 
@@ -426,6 +431,6 @@ former_mortality_alternative_prior <- forest_plot(
   study_draws_m8_a,
   pooled_draw_m8_a,
   "Forest plot of former smokers and mortality",
-  "Former mortality prior",
+  "v5 mortality prior",
   "m8_a.png"
 )

@@ -83,7 +83,7 @@ forest_plot <- function(model, data_study, data_pooled, title, type, filename) {
          title = title,
          caption = type
          ) +
-    scale_fill_discrete(name = "Review Version", labels = c("Current version", "Previous version", "All versions")) +
+    scale_fill_discrete(name = "Review Version", labels = c("Previous versions", "Current version", "All versions")) +
     theme_minimal() +
     theme(panel.spacing = unit(0.1, "lines"),
           strip.text = element_blank())

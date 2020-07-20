@@ -161,6 +161,8 @@ data_study_general <- data_study_general %>%
   mutate(study_id = 1:length(lead_author)) %>% ## We create a unique study ID to aid checking of the outputs later
   write_rds(here::here('data_clean', 'data_study_general.rds'))
 
+prisma_previous <- data_study_general
+
 review_details <- data_study_general %>%
   select(lead_author, date_published, country, review_version, study_id) %>% ## The version of the review in which included studies were incorporated is noted
   write_rds(here::here('data_clean', 'review_details.rds'))
@@ -217,6 +219,7 @@ table_6 <-  table_6 %>%
   mutate(missingness = rowSums(.[8:9], na.rm = T),
          missingness_percentage = (missingness/total)*100) %>% ## Later we want to assess the amount of missingness for each study as it would impact the inclusion of a study into the relevant meta-analyses
   select(-c(not_stated, missing, total, missingness)) %>%
+  left_join(., review_details, by = 'lead_author') %>%
   write_rds(here::here('data_clean', 'table_6.rds'))
 
 a <- data_study_general %>%
@@ -273,6 +276,10 @@ data_study_general <- data_study_general %>%
   filter(!(lead_author %in% exclude_from_analysis)) %>%
   write_csv(., here::here('data_clean', 'data_study_general.csv'))
 
+review_details <- data_study_general %>%
+  select(lead_author, date_published, country, review_version, study_id) %>% 
+  filter(!(lead_author %in% exclude_from_analysis))
+
 table_1 <- table_1 %>%
   filter(review_version %in% analysed_versions) %>%
   select(-review_version) %>%
@@ -298,6 +305,11 @@ table_5 <- table_5 %>%
   select(-review_version) %>%
   filter(!(lead_author %in% exclude_from_analysis))
 
+table_6 <- table_6 %>%
+  filter(review_version %in% analysed_versions) %>%
+  select(-review_version) %>%
+  filter(!lead_author %in% exclude_from_analysis)
+
 a <- data_study_general %>%
   select(lead_author, date_published, source, study_id) %>%
   rename('Lead Author' = lead_author,
@@ -322,32 +334,10 @@ save_as_docx(a, path = here('data_clean', 'included_studies.docx'))
 
 ## Descriptive analysis {.tabset .tabset-fade .tabset-pills}
 
-### The PRISMA diagram will be updated with these numbers
-The PRISMA reporting guidelines for systematic reviews the guidance is available [here](http://www.prisma-statement.org/). We use these values to construct the flow diagram of the results from our search strategy and versioning. The numbers included in the quantitative analysis are those meeting quality eligibility criteria and are calculated later in the report.
+### The PRISMA diagram will be updated
+The PRISMA reporting guidelines for systematic reviews the guidance is available [here](http://www.prisma-statement.org/). **In Progress**
 
 ``` {r PRISMA}
-#Number screened to add to PRISMA
-from_prev_version <- data_study_general %>%
-  filter(review_version %in% prev_versions) %>%
-  filter(!(lead_author %in% exclude_from_analysis)) %>%
-  tally()
-
-source(here::here('scripts', 'prisma_function.R'))
-
-PRISMA_v5 <- PRISMA(search_details)
-PRISMA_v5 <- as.data.frame(PRISMA_v5)
-a <- PRISMA_v5 %>%
-  t() %>%
-  as.data.frame() %>%
-  add_rownames() %>%
-  flextable() %>%
-  set_header_labels(rowname = 'PRISMA category',
-                    V1 = 'Number of studies') %>%
-  set_table_properties(width = 1, layout = 'autofit') %>%
-  set_caption(caption = 'Data for PRISMA')
-
-save_as_docx(a, path = here('data_clean', 'PRISMA_details.docx'))
-a
 
 ```
 
@@ -603,7 +593,7 @@ never_smok_unknown <- table_1 %>%
 smok_not_stated <- table_1 %>%
   filter(., not_stated != 'NA')
 ```
-* **Missing, never/unknown and not stated:** studies report on the numbers of missing (`r paste(nrow(missing_smok))`), never/unknown (`r paste(nrow(never_smok_unknown))`) or not stated (`r paste(nrow(smok_not_stated))`) smoking history. This is often framed as absence of a smoking history.
+* **Missing, never/unknown and not stated:** studies report on the numbers of missing (`r paste(nrow(missing_smok))`, `r paste(round((nrow(missing_smok)/nrow(data_study_general)*100),2), "%", sep = "")`), never/unknown (`r paste(nrow(never_smok_unknown))`) or not stated (`r paste(nrow(smok_not_stated))`) smoking history. This is often framed as absence of a smoking history.
   + **Minimum missing:** `r paste(round(minimum,2), "%", sep = "")`  
   + **Maximum missing:** `r paste(round(maximum,2), "%", sep = "")`
 ``` {r complete}
@@ -629,7 +619,7 @@ datatable(b,
   formatRound(columns = c(2:5), digits = 0, interval = 3, mark = ",")
 #These are the studies with data on current, former and never smokers
 ```
-* **Studies with complete smoking status:** `r paste(nrow(full_smoking_status))`
+* **Studies with complete smoking status:** `r paste(nrow(full_smoking_status))`, `r paste(round((nrow(full_smoking_status)/nrow(data_study_general)*100),2), "%", sep = "")`
 
 ``` {r incomplete}
 #Studies reporting current or current/former and never smoking
@@ -800,7 +790,7 @@ a$iqr <- coalesce(a$iqr, a$range_combined, a$st_dev)
 
 a <- a %>%
   select(study_id, lead_author, date_published, country, sample_size, study_setting, median_mean, mean_used, iqr,
-         female_sex_percent, current_percentage, current_former_percentage, never_smoker_percentage,
+         female_sex_percent, current_percentage, former_percentage, current_former_percentage, never_smoker_percentage,
          never_smoker_unknown_percentage, missing_percentage, study_quality_final) %>%
   mutate(median_mean = paste(median_mean, mean_used, sep = ''),
          median_mean = na_if(median_mean, NA)) %>%
@@ -816,6 +806,7 @@ a <- a %>%
          'Median (IQR)' = median_mean,
          'Female %' = female_sex_percent,
          'Current smoker %' = current_percentage,
+         'Former smokers %' = former_percentage,
          'Current/former smokers %' = current_former_percentage,
          'Never smokers %' = never_smoker_percentage,
          'Never/unknown smokers %' = never_smoker_unknown_percentage,
@@ -896,7 +887,7 @@ a$`Country` <- a$Country %>%
   recode('Usa' = 'USA',
          'Uk' = 'UK')
 
-numeric_columns <- c('Median (IQR)', 'Female %', 'Current smoker %', 'Current/former smokers %',
+numeric_columns <- c('Median (IQR)', 'Female %', 'Current smoker %','Former smokers %', 'Current/former smokers %',
                      'Never smokers %', 'Never/unknown smokers %', 'Missing %')
 ```
 The total number of included studies is `r paste(nrow(table_1_word))`. This table is searchable
@@ -1985,8 +1976,12 @@ running_meta_count <- running_meta_count %>%
 ### Study quality assessment
 ``` {r table_6}
 #Table 6
-fair <- nrow(filter(quality_rating, quality_rating$overall_quality == "fair" ))
-poor <- nrow(filter(quality_rating, quality_rating$overall_quality == "poor" ))
+fair <- filter(quality_rating, quality_rating$overall_quality == "fair" ) %>%
+  filter(!lead_author %in% exclude_from_analysis) %>%
+  nrow()
+poor <- filter(quality_rating, quality_rating$overall_quality == "poor" ) %>%
+  filter(!lead_author %in% exclude_from_analysis) %>%
+  nrow()
 ```
 The number of **Fair** quality studies are `r paste(fair)` with `r paste(poor)` **Poor** quality studies
 
