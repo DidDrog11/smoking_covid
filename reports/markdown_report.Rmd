@@ -234,6 +234,8 @@ a$`Publication Source` <- to_title_case(a$`Publication Source`)
 a$`Publication Source` <- if_else(str_length(a$`Publication Source`) < 5,
                                   toupper(a$`Publication Source`),
                                   to_title_case(a$`Publication Source`))
+
+write_rds(data_study_general, here("data_clean", "data_study_general.rds"))
 ```
 
 ``` {r save_as_table_for_word, include=FALSE}

@@ -6,12 +6,12 @@ extract_TE <- function(dataset) {
     rename(Author = 1, TE = 2, seTE = 3)
 }
 
-bayes_test <- function(dataset, defined_prior, iterations = 4000) {
+bayes_test <- function(dataset, defined_prior, iterations) {
   brm(
     TE | se(seTE) ~ 1 + (1 | Author),
     data = dataset,
     prior = defined_prior,
-    iter = 4000,
+    iter = iterations,
     control = list(adapt_delta = 0.99)
   )
 }
@@ -43,22 +43,23 @@ pooled_effect_draw <- function(dataset) {
            review_version = factor("combined_pooled"))
 }
 
-forest_plot <- function(model, data_study, data_pooled, title, type, filename) {
+forest_plot <- function(model, data_study, data_pooled, cut, title, type, filename) {
   forest_data <- bind_rows(data_study, data_pooled) %>%
     ungroup() %>%
     mutate(Author = str_replace_all(Author, "[.]", " ")) %>%
-    mutate(Author = reorder(Author, b_Intercept))
+    mutate(Author = reorder(Author, b_Intercept),
+           b_Intercept = exp(b_Intercept))
   summary_forest <- group_by(forest_data, Author, review_version) %>%
     mean_qi(b_Intercept)
   graph <- ggplot(aes(b_Intercept, relevel(Author, "Pooled Effect", after = Inf), fill = review_version),
                   data = forest_data) +
-    geom_vline(xintercept = fixef(model)[1, 1],
+    geom_vline(xintercept = exp(fixef(model)[1, 1]),
                color = "grey",
                size = 1) +
-    geom_vline(xintercept = fixef(model)[1, 3:4],
+    geom_vline(xintercept = exp(fixef(model)[1, 3:4]),
                color = "grey",
                linetype = 2) +
-    geom_vline(xintercept = 0,
+    geom_vline(xintercept = 1,
                color = "black",
                size = 1) +
     geom_density_ridges(
@@ -73,17 +74,18 @@ forest_plot <- function(model, data_study, data_pooled, title, type, filename) {
       data = mutate_if(summary_forest, is.numeric, round, 2),
       aes(
         label = glue("{b_Intercept} [{.lower}, {.upper}]"),
-        x = Inf
+        x = cut
       ),
       hjust = "inward"
     ) +
     facet_grid(review_version~  ., scales = "free_y", space = "free") +
-    labs(x = "log Relative Risk",
+    labs(x = "Relative Risk [95% Credible Interval]",
          y = element_blank(),
          title = title,
          caption = type
          ) +
     scale_fill_discrete(name = "Review Version", labels = c("Previous versions", "Current version", "All versions")) +
+    xlim(NA, cut) +
     theme_minimal() +
     theme(panel.spacing = unit(0.1, "lines"),
           strip.text = element_blank())
