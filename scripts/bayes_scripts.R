@@ -50,7 +50,7 @@ forest_plot <- function(model, data_study, data_pooled, cut, title, type, filena
     mutate(Author = reorder(Author, b_Intercept),
            b_Intercept = exp(b_Intercept))
   summary_forest <- group_by(forest_data, Author, review_version) %>%
-    mean_qi(b_Intercept)
+    median_qi(b_Intercept)
   graph <- ggplot(aes(b_Intercept, relevel(Author, "Pooled Effect", after = Inf), fill = review_version),
                   data = forest_data) +
     geom_vline(xintercept = exp(fixef(model)[1, 1]),
@@ -76,19 +76,21 @@ forest_plot <- function(model, data_study, data_pooled, cut, title, type, filena
         label = glue("{b_Intercept} [{.lower}, {.upper}]"),
         x = cut
       ),
-      hjust = "inward"
+      hjust = "inward",
+      size = 5
     ) +
     facet_grid(review_version~  ., scales = "free_y", space = "free") +
     labs(x = "Relative Risk [95% Credible Interval]",
          y = element_blank(),
-         title = title,
-         caption = type
+         title = element_blank(),
+         caption = element_blank()
          ) +
-    scale_fill_discrete(name = "Review Version", labels = c("Previous versions", "Current version", "All versions")) +
-    xlim(NA, cut) +
+    scale_fill_discrete(name = "Review version", labels = c("Previous version (v5)", "Current version (v6)", "Pooled effect")) +
+    xlim(0, cut) +
     theme_minimal() +
     theme(panel.spacing = unit(0.1, "lines"),
-          strip.text = element_blank())
+          strip.text = element_blank(),
+          axis.text.y = element_text(size = 12))
   
   outputs <- list("plot" = graph, "data" = forest_data, "summary" = summary_forest)
   ggsave(filename = filename, plot = graph, device = "png", path = here("reports", "figure"))
