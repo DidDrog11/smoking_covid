@@ -30,7 +30,7 @@ richardson,2020-04-22,jama,https://doi.org/10.1001/jama.2020.6775,olga,v2,usa,re
 fontanet,2020-04-23,medrxiv,https://doi.org/10.1101/2020.04.18.20071134,olga,v2,france,retrospective_cohort,community_and_hospital,661,no,no,no,NA,32
 zheng_gao,2020-04-19,metabolism,https://doi.org/10.1016/j.metabol.2020.154244,david,v2,china,retrospective_cohort,hospital,66,no,no,no,NA,33
 liao_feng,2020-04-24,medrxiv,https://doi.org/10.1101/2020.04.21.20074724,david,v2,china,retrospective_cohort,hospital,1848,no,no,no,NA,34
-rodriguez,2020-04-24,medrxiv,https://doi.org/10.1101/2020.04.20.20072918,david,v2,spain,prospective_cohort,hospital,7,no,no,no,NA,35
+gil_agudo,2020-04-24,medrxiv,https://doi.org/10.1101/2020.04.20.20072918,david,v2,spain,prospective_cohort,hospital,7,no,no,no,NA,35
 shi_ren,2020-04-23,medrxiv,https://doi.org/10.1101/2020.04.19.20071472,david,v2,china,retrospective_cohort,hospital,134,no,no,no,NA,37
 hadjadj,2020-04-23,medrxiv,https://doi.org/10.1101/2020.04.19.20068015,david,v2,france,case_control,hospital,50,no,no,no,NA,38
 gold_us_cdc,2020-04-20,cdc_report,https://www.cdc.gov/mmwr/volumes/69/wr/pdfs/mm6918e1-H.pdf,david,v2,usa,retrospective_cohort,hospital,305,no,no,no,NA,41
@@ -61,7 +61,7 @@ de_lusignan,2020-05-15,lancet_infectious_diseases,https://doi.org/10.1016/S1473-
 targher,2020-05-13,diabetes_metabolism,https://doi-org.libproxy.ucl.ac.uk/10.1016/j.diabet.2020.05.001,rosemary,v4,china,retrospective_cohort,hospital,339,no,no,no,NA,72
 valenti,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.11.20098442,rosemary,v4,italy,cross_sectional,community,789,no,no,no,antibody_based,73
 feuth,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.14.20098319,rosemary,v4,finland,retrospective_cohort,hospital,28,no,no,no,all_icu_ctitically_vs_severely_ill,74
-heng,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.12.20095885,rosemary,v4,china,prospective_cohort,hospital,51,no,no,no,NA,75
+ge,2020-05-18,medrxiv,https://doi.org/10.1101/2020.05.12.20095885,rosemary,v4,china,prospective_cohort,hospital,51,no,no,no,NA,75
 parrotta,2020-05-18,neuroimmunology_and_neuroinflammation,https://doi.org/10.1212/NXI.0000000000000835,rosemary,v4,usa,retrospective_cohort,community_and_hospital,76,no,no,no,NA,76
 shekhar,2020-05-18,infectious_diseases,https://doi.org/10.1080/23744235.2020.1774645,rosemary,v4,usa,prospective_cohort,hospital,50,no,no,no,NA,77
 mejia_vilet,2020-05-16,medrxiv,https://doi.org/10.1101/2020.05.12.20099416,rosemary,v4,mexico,prospective_cohort,hospital,329,no,no,yes,mexico,78
@@ -112,7 +112,7 @@ miyara_medrxiv,2020-06-12,medrxiv,https://doi.org/10.1101/2020.06.10.20127514,ro
 apea,2020-06-12,medrxiv,https://doi.org/10.1101/2020.06.10.20127621,rosemary,v5,uk,prospective_cohort,hospital,1737,no,no,yes,could_be_included_in_isaric,128
 woolford,2020-06-11,medrxiv,https://doi.org/10.1101/2020.06.09.20126292,rosemary,v5,uk,prospective_cohort,community_and_hospital,4510,no,no,yes,biobank,129
 hultcrantz,2020-06-11,medrxiv,https://doi.org/10.1101/2020.06.09.20126516,rosemary,v5,usa,retrospective_cohort,community_and_hospital,127,no,no,yes,new_york_multiple_hospitals,130
-cepelowicz,2020-06-10,medrxiv,https://doi.org/10.1101/2020.06.06.20124461,rosemary,v5,usa,retrospective_cohort,hospital,280,no,no,no,NA,131
+rajter,2020-06-10,medrxiv,https://doi.org/10.1101/2020.06.06.20124461,rosemary,v5,usa,retrospective_cohort,hospital,280,no,no,no,NA,131
 lan,2020-06-09,medrxiv,https://doi.org/10.1101/2020.06.08.20125120,rosemary,v5,usa,cross_sectional,community,104,no,no,no,NA,132
 zeng,2020-06-16,medrxiv,https://doi.org/10.1101/2020.06.14.20125997,david,v5,china,retrospective_cohort,hospital,1031,no,no,no,NA,134
 suleyman,2020-06-16,jama,10.1001/jamanetworkopen.2020.12270,david,v5,usa,retrospective_cohort,hospital,463,no,no,no,NA,135
@@ -166,7 +166,7 @@ patel,2020-07-03,medrxiv,https://doi.org/10.1101/2020.06.30.20143867,rosemary,v6
 merzon,2020-07-03,medrxiv,https://doi.org/10.1101/2020.07.01.20144329,rosemary,v6,israel,retrospective_cohort,community_and_hospital,7807,no,no,no,leumit_health_services_database,183
 trubiano,2020-07-02,medrxiv,https://doi.org/10.1101/2020.06.30.20143818,rosemary,v6,australia,prospective_cohort,community_and_hospital,2935,no,no,no,narrative_description_of_more_likely_to_have_triage_for_test,184
 fan,2020-07-11,medrxiv,https://doi.org/10.1101/2020.07.09.20149369,rosemary,v6,uk,prospective_cohort,community_and_hospital,1425,no,no,yes,biobank,185
-shi,2020-07-11,medrxiv,https://doi.org/10.1101/2020.07.10.20151076,rosemary,v6,uk,prospective_cohort,community_and_hospital,1521,no,no,yes,biobank_cancer_patients,186
+shi_resurreccion,2020-07-11,medrxiv,https://doi.org/10.1101/2020.07.10.20151076,rosemary,v6,uk,prospective_cohort,community_and_hospital,1521,no,no,yes,biobank_cancer_patients,186
 riley,2020-07-11,medrxiv,https://doi.org/10.1101/2020.07.10.20150524,rosemary,v6,uk,prospective_cohort,community_and_hospital,120620,no,no,no,react_study,187
 maucourant,2020-07-10,medrxiv,https://doi.org/10.1101/2020.07.07.20148478,rosemary,v6,sweden,retrospective_cohort,hospital,27,no,no,no,NA,188
 elmunzer,2020-07-09,medrxiv,https://doi.org/10.1101/2020.07.07.20143024,rosemary,v6,multiple,retrospective_cohort,hospital,1992,no,yes,yes,network_36_centres,189

@@ -11,8 +11,8 @@ output:
     theme: spacelab
     toc: true
     toc_collapse: true
-    toc_depth: 3
-    toc_float: no
+    toc_depth: 4
+    toc_float: yes
     css: !expr here::here('css', 'style.css')
     keep_md: false
 editor_options: 
