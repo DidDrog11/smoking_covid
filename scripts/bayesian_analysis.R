@@ -101,6 +101,12 @@ current_testing_alternative_prior <- forest_plot(
   "m1_a.png"
 )
 
+png(file = (here("reports", "figure","ECDF_m1_a.png")))
+plot(m1_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 0.9, col = "red")
+dev.off()
+
 current_testing_alternative_prior_hh <- forest_plot(
   m1_a_hh,
   study_draws_m1_a_hh,
@@ -155,6 +161,12 @@ former_testing_alternative_prior <- forest_plot(
   "v5 testing prior",
   "m2_a.png"
 )
+
+png(file = (here("reports", "figure","ECDF_m2_a.png")))
+plot(m2_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
 
 former_testing_alternative_prior_hh <- forest_plot(
   m2_a_hh,
@@ -212,6 +224,12 @@ current_hospitalisation_alternative_prior <- forest_plot(
   "m3_a.png"
 )
 
+png(file = (here("reports", "figure","ECDF_m3_a.png")))
+plot(m3_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
+
 current_hospitalisation_alternative_prior_hh <- forest_plot(
   m3_a_hh,
   study_draws_m3_a_hh,
@@ -268,6 +286,13 @@ former_hospitalisation_alternative_prior <- forest_plot(
   "v5 hospitalisation prior",
   "m4_a.png"
 )
+
+png(file = (here("reports", "figure","ECDF_m4_a.png")))
+plot(m4_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
+
 
 former_hospitalisation_alternative_prior_hh <- forest_plot(
   m4_a_hh,
@@ -329,6 +354,12 @@ current_severity_alternative_prior <- forest_plot(
   "m5_a.png"
 )
 
+png(file = (here("reports", "figure","ECDF_m5_a.png")))
+plot(m5_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
+
 current_severity_alternative_prior_hh <- forest_plot(
   m5_a_hh,
   study_draws_m5_a_hh,
@@ -388,6 +419,12 @@ former_severity_alternative_prior <- forest_plot(
   "m6_a.png"
 )
 
+png(file = (here("reports", "figure","ECDF_m6_a.png")))
+plot(m6_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
+
 former_severity_alternative_prior <- forest_plot(
   m6_a_hh,
   study_draws_m6_a_hh,
@@ -443,7 +480,13 @@ current_mortality_alternative_prior <- forest_plot(
   "m7_a.png"
 )
 
-current_mortality_alternative_prior <- forest_plot(
+png(file = (here("reports", "figure","ECDF_m7_a.png")))
+plot(m7_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
+
+current_mortality_alternative_prior_hh <- forest_plot(
   m7_a_hh,
   study_draws_m7_a_hh,
   pooled_draw_m7_a_hh,
@@ -498,3 +541,24 @@ former_mortality_alternative_prior <- forest_plot(
   "v4 mortality prior",
   "m8_a.png"
 )
+
+png(file = (here("reports", "figure","ECDF_m8_a.png")))
+plot(m8_a_ecdf, main = "Empirical cumulative distribution",
+     xlab = "Relative Risk")
+abline(v = 1.1, col = "red")
+dev.off()
+
+former_mortality_alternative_prior_hh <- forest_plot(
+  m8_a_hh,
+  study_draws_m8_a_hh,
+  pooled_draw_m8_a_hh,
+  cut = 5,
+  "Forest plot of former smokers and mortality",
+  "v4 mortality prior",
+  "m8_a_hh.png"
+)
+
+
+# ECDF --------------------------------------------------------------------
+
+

@@ -92,14 +92,13 @@ This is a searchable list of all the studies that have met out inclusion and exc
 datatable(data_study_general[1:4] %>%
             mutate(`date_published_format(2020-05-12)` = as.Date(data_study_general$`date_published_format(2020-05-12)`)),
           colnames = c("Lead author" = 2, "Date published" = 3, "Source" = 4, "DOI" = 5))
-
 ```
 
 The third sheet produces **Table 1** this contains the details of the population of the studies in our review. Primarily includes smoking status but also the proportion of females in the study and the age of participants.
 
 ```{r tail_table_1, include=FALSE}
 datatable(table_1 %>%
-                 filter(lead_author != is.na(lead_author)))
+            filter(lead_author != is.na(lead_author)))
 ```
 
 The fourth sheet produces **Table 2** this contains the data extracted from relevant studies on testing data and smoking status. Most studies will not have data on this outcome however we filter these subsequently. These are sparse datasets as many studies do not report on all levels of smoking exposure.
@@ -107,7 +106,7 @@ The fourth sheet produces **Table 2** this contains the data extracted from rele
 ```{r tail_table_2, include=FALSE}
 datatable(
   table_2 %>%
-  filter(data_on_testing == TRUE)
+    filter(data_on_testing == TRUE)
 )
 ```
 
@@ -116,7 +115,7 @@ The fourth sheet produces **Table 3** this contains the data extracted from rele
 ```{r tail_table_3, include=FALSE}
 datatable(
   table_3 %>%
-  filter(data_on_hospitalisation == TRUE)
+    filter(data_on_hospitalisation == TRUE)
 )
 ```
 
@@ -125,7 +124,7 @@ The fourth sheet produces **Table 4** this contains the data extracted from rele
 ```{r tail_table_4, include=FALSE}
 datatable(
   table_4 %>%
-  filter(data_disease_severity == TRUE)
+    filter(data_disease_severity == TRUE)
 )
 ```
 
@@ -134,7 +133,7 @@ The fifth sheet produces **Table 5** this contains the data extracted from relev
 ```{r tail_table_5, include=FALSE}
 datatable(
   table_5 %>%
-  filter(data_on_deaths == TRUE)
+    filter(data_on_deaths == TRUE)
 )
 ```
 
@@ -340,7 +339,40 @@ save_as_docx(a, path = here('data_clean', 'included_studies.docx'))
 The PRISMA reporting guidelines for systematic reviews the guidance is available [here](http://www.prisma-statement.org/). **In Progress**
 
 ``` {r PRISMA}
+current_total <- search_details %>%
+  select(total_included) %>%
+  sum()
 
+previous_total <- search_details %>%
+  filter(review_version %in% previous_review_versions) %>%
+  select(total_included) %>%
+  sum()
+
+a <- search_details %>%
+  group_by(review_version) %>%
+  filter(review_version == current_review_version) %>%
+  mutate(title_abstract = sum(ovid_number_results, medrxiv_number_results, other_source_included),
+         full_texts_assessed = sum(ovid_screened, medrxiv_screened, other_source_included),
+         title_abstract_included = sum(ovid_included, medrxiv_included, other_source_included),
+         title_abstract_excluded = title_abstract - full_texts_assessed,
+         full_text_excluded = full_texts_assessed-total_included,
+         previous_total = previous_total,
+         previous_minus_superseded = previous_total-superseded,
+         current_total = current_total) %>%
+  select("Review version" = review_version,
+         "Date Screened" = date_screened,
+         "OVID results" = "ovid_number_results",
+         "medRxiv results" = "medrxiv_number_results",
+         "Other sources" = "other_source_included",
+         "Title/abstracts screened" = "title_abstract",
+         "Title/abstracts excluded" = "title_abstract_excluded",
+         "Full texts assessed" = "full_texts_assessed",
+         "Full texts excluded" = "full_text_excluded",
+         "Records carried forward" = "previous_minus_superseded",
+         "Supersed from previous version" = superseded,
+         "Studies in narrative synthesis" = "current_total")
+
+flextable(a)
 ```
 
 ### We summarise where the studies were conducted
@@ -1661,7 +1693,7 @@ event_rates_smoker
 ![Figure 7: Current versus never smokers](figure/fig_7.png)
 
 ```{r}
-# Former smoker hospitalisation -------------------------------------------
+# Former smoker severity -------------------------------------------
 event_rates_former <- meta %>%
   mutate(., Ee = severe_former_smoker) %>%
   mutate(., Ne = (severe_former_smoker+non_severe_former_smoker)) %>%
@@ -1851,7 +1883,7 @@ save_as_docx(a, path = here('data_clean', 'Table_5.docx'))
 #### Smoking and COVID-19 mortality meta-analysis
 
 ```{r current_never mortality, echo = F}
-exclude <- c("cepelowicz", "garassino")
+exclude <- c("rajter", "garassino")
 table_5 <- table_5_word
 included_studies <- quality_table_5 %>%
   filter(overall_quality != 'poor') %>%
