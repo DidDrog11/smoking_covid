@@ -1,2 +1,2 @@
 # smoking_covid
-10.5281/zenodo.3971173
+https://zenodo.org/badge/266084852.svg
